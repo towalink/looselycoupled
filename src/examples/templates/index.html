@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+      <h3>Output</h3>
+      <div class='form'>
+        <form method="get">
+          <div class="table">
+          {%- for item, itemdata in outputlines.items() %}
+            <div class="line"></div>
+            <div class="table-row">
+              <div class="table-cell bordertop">
+                {{ item }}: {{ itemdata }}<br>
+              </div>
+            </div>
+          {%- endfor %}
+          {% if not outputlines %}
+            <div class="line"></div>
+            <div class="table-row">
+              <div class="table-cell bordertop">
+                There is no data to show
+              </div>
+            </div>
+          {% endif %}
+          </div>
+        </form>
+      </div>
+{% endblock %}

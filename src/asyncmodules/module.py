@@ -44,33 +44,39 @@ class Module():
                 return method(**kwargs)
         else:
             if log_unknown:
-                logger.error(f'Called method [{methodname}] unknown')
+                logger.error(f'Called method [{methodname}] unknown in module [{self._name}]')
 
-    def trigger_event(self, event=None, **kwargs):
+    async def trigger_event(self, event=None, **kwargs):
         """Helper method to trigger an event asynchronously"""
         if not self.is_active:
             logger.warn(f'Module not active when triggering event [{event}]')
         if event is None:
             event = self._name + '_event'
         metadata = Metadata(source_obj=self, source_name=self._name)
-        self._function_references.trigger_event(event, metadata, **kwargs)
+        await self._function_references.trigger_event(event, metadata, **kwargs)
 
-    def enqueue_task(self, task, **kwargs):
+    async def enqueue_task(self, task, **kwargs):
         """Helper method to queue a task for asynchronous execution"""
         if not self.is_active:
             logger.warn(f'Module not active when enqueuing task [{task}]')
+        if '.' not in task:
+            task = self._name + '.' + task
         metadata = Metadata(source_obj=self, source_name=self._name)
-        return self._function_references.enqueue_task(task, metadata, **kwargs)
+        return await self._function_references.enqueue_task(task, metadata, **kwargs)
 
-    def exec_task(self, task, **kwargs):
+    async def exec_task(self, task, **kwargs):
         """Helper method for synchronous execution of a task"""
-        return self._function_references.exec_task(task, **kwargs)
+        return await self._function_references.exec_task(task, **kwargs)
+
+    def register_task(self, task):
+        """Register a task for exception handling and management"""
+        return self._function_references.register_task(task)
 
     def get_config(self, itemname, default=None):
         """Return a configuration item"""
         return cfg.get_item(self._name + '.' + itemname, default)
 
-    async def run_passively(self):
+    async def run_passively(self, metadata):
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them)"""
         pass
 
@@ -78,9 +84,10 @@ class Module():
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them); internal method"""
         self.State = States.passive
         logger.debug('Run module (passively)')
-        await self.run_passively()
+        metadata = Metadata(source_obj=self, source_name=self._name)
+        await self.run_passively(metadata)
 
-    async def run(self):
+    async def run(self, metadata):
         """Runs the module, may actively initiate new tasks/events"""
         pass
 
@@ -91,11 +98,17 @@ class Module():
         else:
             logger.warning(f'Attempted to activate module [{self._name}] that was not in passive state before')
         logger.debug('Run module')
-        await self.run()
+        metadata = Metadata(source_obj=self, source_name=self._name)
+        await self.run(metadata=metadata)
+
+    async def initialize(self):
+        """Called at module startup for initialization purposes"""
+        pass
 
     async def startup(self):
         """Initialization of the module (get config)"""
-        # asyncio.create_task(self._run_passively()) with exception handling:
+        await self.initialize()
+        # asyncio.create_task(self._run_passively()) with exception handling:        
         self._task_passive = await self._function_references.call_method_async(self, '_run_passively')
 
     async def activate(self):

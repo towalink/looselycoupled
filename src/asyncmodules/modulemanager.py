@@ -53,6 +53,7 @@ class ModuleManager(object):
         return self._modules[modulename].is_ready
 
     def task_done_callback(self, task):
+        """React on a finished coroutine"""
         self._running_tasks.discard(task)
         self._finished_tasks.add(task)
         try:
@@ -68,7 +69,13 @@ class ModuleManager(object):
                     traceback.print_exc(file=handle)
                     handle.write('\n')                
 
+    def register_task(self, task):
+        """Register a task for exception handling and management"""
+        self._running_tasks.add(task)
+        task.add_done_callback(self.task_done_callback)
+
     async def call_method_async(self, module, methodname, log_unknown=True, **kwargs):
+        """Call a method asynchronously as a separate asyncio coroutine"""
 
         async def wait_for_free_task_slot():
             if len(self._running_tasks) > 2 * len(self._modules):
@@ -85,8 +92,7 @@ class ModuleManager(object):
         logger.debug(f'Calling method asynchronously [{module}.{methodname}({str(kwargs)})]')
         await wait_for_free_task_slot()
         task = asyncio.create_task(module.call_method(methodname, log_unknown, **kwargs))
-        self._running_tasks.add(task)
-        task.add_done_callback(self.task_done_callback)
+        self.register_task(task)
         return task
 
     async def exec_task_internal(self, target, metadata, asynchronous=False, **kwargs):
@@ -130,6 +136,7 @@ class ModuleManager(object):
                 else:
                     await module_obj.call_method(event, log_unknown=False, **kwargs)
         if event == 'on_exit':
+            logger.info('Shutting down after on_exit event notification...')
             self._exit = True
             await self.broadcast_event_internal('deactivate', metadata=self.create_metadata(), asynchronous=False)
             await self.broadcast_event_internal('initiate_shutdown', metadata=self.create_metadata(), asynchronous=False)
@@ -150,7 +157,7 @@ class ModuleManager(object):
     async def enqueue_task_internal(self, target, metadata, **kwargs):
         """Enqueue the provided task for asynchronous execution"""
         logger.debug(f'Enqueuing task [{target}({str(kwargs)})]')
-        await self._eventloop.queue.put(target=target, metadata=metadata, **kwargs)
+        await self._eventloop.queue.put(target=target, metadata=metadata, kwargs=kwargs)
 
     def enqueue_task_threadsafe(self, target, metadata, **kwargs):
         """Enqueue the provided task for asynchronous execution"""
@@ -185,7 +192,7 @@ class ModuleManager(object):
     async def process_item(self, item):
         """Process an item from the event queue"""
         if '.' in item.target:
-            await self.exec_task(method=item.target, metadata=item.metadata, asynchronous=True, **(item.kwargsargs))            
+            await self.exec_task(target=item.target, metadata=item.metadata, asynchronous=True, **(item.kwargs))            
         else:
             await self.broadcast_event(event=item.target, metadata=item.metadata, **(item.kwargs))
 
@@ -253,5 +260,5 @@ class ModuleManager(object):
     @property
     def function_references(self):
         """Return reference to functions for calling from external modules"""
-        FunctionReferences = namedtuple('FunctionReferences', ['trigger_event', 'enqueue_task', 'exec_task', 'broadcast_event', 'call_method_async'])
-        return FunctionReferences(self.trigger_event, self.enqueue_task, self.exec_task, self.broadcast_event, self.call_method_async)
+        FunctionReferences = namedtuple('FunctionReferences', ['trigger_event', 'enqueue_task', 'exec_task', 'broadcast_event', 'call_method_async', 'register_task'])
+        return FunctionReferences(self.trigger_event, self.enqueue_task, self.exec_task, self.broadcast_event, self.call_method_async, self.register_task)
