@@ -16,8 +16,11 @@ logger = logging.getLogger(__name__)
 
 class WebApp():
 
-    def __init__(self):
+    def __init__(self, exec_task_threadsafe, enqueue_task_threadsafe, trigger_event_threadsafe):
         """Instance initialization"""
+        self.exec_task_threadsafe = exec_task_threadsafe
+        self.enqueue_task_threadsafe = enqueue_task_threadsafe
+        self.trigger_event_threadsafe = trigger_event_threadsafe
         self.jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')))
         self.lines = dict()
 
@@ -31,6 +34,12 @@ class WebApp():
     def index(self, action=None, id=None, action_selection=None):
         """Show a list of existing machines"""
         #cherrypy.log(str(vms), context='WEBAPP', severity=logging.INFO, traceback=False)
+        # Examples for calling asyncmodules methods outside the event loop thread
+        pos = self.exec_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was synchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
+        self.enqueue_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was asynchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
+        # Note: the following is not sent to our local event handler due to split horizon (don't send notifications to event source)
+        self.trigger_event_threadsafe('my_simple_example_event', param='This line was asynchronously added by the module "cherrypy_example" by triggering an event from a non-coroutine in another thread')
+        # Render page
         tmpl = self.jinja_env.get_template('index.html')
         return tmpl.render(sessiondata=cherrypy.session, outputlines=self.lines)
 
@@ -58,10 +67,10 @@ class WebApp():
         return f'"{username}" has been logged out'
 
 
-def prepare_webapp():
+def prepare_webapp(exec_task_threadsafe, enqueue_task_threadsafe, trigger_event_threadsafe):
     """Runs the CherryPy web application with the provided configuration data"""
     script_path = os.path.dirname(os.path.abspath(__file__))
-    app = WebApp()
+    app = WebApp(exec_task_threadsafe, enqueue_task_threadsafe, trigger_event_threadsafe)
     # Use SSL if certificate files exist
     #= os.path.exists(cfg.sslcertfile) and os.path.exists(cfg.sslkeyfile)
     #sl:
@@ -117,7 +126,7 @@ class CherryPyExample(module.Module):
 
     async def initialize(self):
         """Module initialization"""
-        self.app = prepare_webapp()
+        self.app = prepare_webapp(self.exec_task_threadsafe, self.enqueue_task_threadsafe, self.trigger_event_threadsafe)
 
     async def add_log_entry(self, text):
         """Adds a log entry to the log dictionary"""

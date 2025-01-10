@@ -115,7 +115,7 @@ class ModuleManager(object):
     def exec_task_threadsafe(self, target, metadata, asynchronous=False, **kwargs):
         """Execute a task while ensuring that no other task is running in parallel"""
         logger.debug(f'Executing task [{target}({str(kwargs)})] in a threadsafe manner')
-        task = asyncio.run_coroutine_threadsafe(self.exec_task_internal(target, metadata, asynchronous, **kwargs), asyncio.get_running_loop())
+        task = asyncio.run_coroutine_threadsafe(self.exec_task_internal(target, metadata, asynchronous, **kwargs), self.loop)
         result = task.result()  # this will block until the result is available
         return result
 
@@ -145,7 +145,7 @@ class ModuleManager(object):
     def broadcast_event_threadsafe(self, event, metadata, asynchronous=True, **kwargs):
         """Handle an event while ensuring that no other task is running in parallel"""
         logger.debug(f'Broadcasting event [{event}({str(kwargs)})] in a threadsafe manner')
-        asyncio.run_coroutine_threadsafe(self.broadcast_event_internal(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs), asyncio.get_running_loop())
+        asyncio.run_coroutine_threadsafe(self.broadcast_event_internal(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs), self.loop)
 
     async def broadcast_event(self, event, metadata, asynchronous=True, **kwargs):
         """Handle an event, getting a lock if needed"""
@@ -162,7 +162,7 @@ class ModuleManager(object):
     def enqueue_task_threadsafe(self, target, metadata, **kwargs):
         """Enqueue the provided task for asynchronous execution"""
         logger.debug(f'Enqueuing task [{target}({str(kwargs)})] in a threadsafe manner')
-        asyncio.run_coroutine_threadsafe(self.enqueue_task_internal(target=target, metadata=metadata, **kwargs), asyncio.get_running_loop())
+        asyncio.run_coroutine_threadsafe(self.enqueue_task_internal(target=target, metadata=metadata, **kwargs), self.loop)
 
     async def enqueue_task(self, target, metadata, **kwargs):
         """Enqueue the provided task for asynchronous execution"""
@@ -179,7 +179,7 @@ class ModuleManager(object):
     def trigger_event_threadsafe(self, target, metadata, **kwargs):
         """Enqueue the provided event for asynchronous event handling"""
         logger.debug(f'Triggering event target [{target}({str(kwargs)})] in a threadsafe manner')
-        asyncio.run_coroutine_threadsafe(self.trigger_event_internal(target=target, metadata=metadata, args=args), asyncio.get_running_loop())
+        asyncio.run_coroutine_threadsafe(self.trigger_event_internal(target=target, metadata=metadata, **kwargs), self.loop)
 
     async def trigger_event(self, event, metadata, **kwargs):
         """Enqueue the provided event for asynchronous event handling"""
@@ -234,7 +234,7 @@ class ModuleManager(object):
         signal.signal(signal.SIGINT, self.on_signal)
         signal.signal(signal.SIGTERM, self.on_signal)
         # Run asyncio loop
-        loop = asyncio.new_event_loop()
+        loop = self.loop = asyncio.new_event_loop()
         try:
             asyncio.set_event_loop(loop)
             maintask = loop.create_task(self.maintask())
@@ -260,5 +260,19 @@ class ModuleManager(object):
     @property
     def function_references(self):
         """Return reference to functions for calling from external modules"""
-        FunctionReferences = namedtuple('FunctionReferences', ['trigger_event', 'enqueue_task', 'exec_task', 'broadcast_event', 'call_method_async', 'register_task'])
-        return FunctionReferences(self.trigger_event, self.enqueue_task, self.exec_task, self.broadcast_event, self.call_method_async, self.register_task)
+        FunctionReferences = namedtuple('FunctionReferences', [
+            'trigger_event', 'trigger_event_threadsafe', 
+            'enqueue_task', 'enqueue_task_threadsafe',
+            'exec_task', 'exec_task_threadsafe',
+            'broadcast_event', 
+            'call_method_async', 
+            'register_task'
+        ])
+        return FunctionReferences(
+            self.trigger_event, self.trigger_event_threadsafe, 
+            self.enqueue_task, self.enqueue_task_threadsafe,
+            self.exec_task, self.exec_task_threadsafe,
+            self.broadcast_event, 
+            self.call_method_async, 
+            self.register_task
+        )

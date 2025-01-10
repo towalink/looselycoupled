@@ -46,14 +46,17 @@ class Module():
             if log_unknown:
                 logger.error(f'Called method [{methodname}] unknown in module [{self._name}]')
 
-    async def trigger_event(self, event=None, **kwargs):
-        """Helper method to trigger an event asynchronously"""
-        if not self.is_active:
-            logger.warn(f'Module not active when triggering event [{event}]')
-        if event is None:
-            event = self._name + '_event'
-        metadata = Metadata(source_obj=self, source_name=self._name)
-        await self._function_references.trigger_event(event, metadata, **kwargs)
+    async def exec_task(self, task, **kwargs):
+        """Helper method for synchronous execution of a task"""
+        if not 'metadata' in kwargs:
+            kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
+        return await self._function_references.exec_task(task, **kwargs)
+
+    def exec_task_threadsafe(self, task, **kwargs):
+        """Helper method for synchronous execution of a task"""
+        if not 'metadata' in kwargs:
+            kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
+        return self._function_references.exec_task_threadsafe(task, **kwargs)
 
     async def enqueue_task(self, task, **kwargs):
         """Helper method to queue a task for asynchronous execution"""
@@ -61,12 +64,39 @@ class Module():
             logger.warn(f'Module not active when enqueuing task [{task}]')
         if '.' not in task:
             task = self._name + '.' + task
-        metadata = Metadata(source_obj=self, source_name=self._name)
-        return await self._function_references.enqueue_task(task, metadata, **kwargs)
+        if not 'metadata' in kwargs:
+            kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
+        return await self._function_references.enqueue_task(task, **kwargs)
 
-    async def exec_task(self, task, **kwargs):
-        """Helper method for synchronous execution of a task"""
-        return await self._function_references.exec_task(task, **kwargs)
+    def enqueue_task_threadsafe(self, task, **kwargs):
+        """Helper method to queue a task for asynchronous execution"""
+        if not self.is_active:
+            logger.warn(f'Module not active when enqueuing task [{task}]')
+        if '.' not in task:
+            task = self._name + '.' + task
+        if not 'metadata' in kwargs:
+            kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
+        return self._function_references.enqueue_task_threadsafe(task, **kwargs)
+
+    async def trigger_event(self, event=None, **kwargs):
+        """Helper method to trigger an event asynchronously"""
+        if not self.is_active:
+            logger.warn(f'Module not active when triggering event [{event}]')
+        if event is None:
+            event = self._name + '_event'
+        if not 'metadata' in kwargs:
+            kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
+        await self._function_references.trigger_event(event, **kwargs)
+
+    def trigger_event_threadsafe(self, event=None, **kwargs):
+        """Helper method to trigger an event asynchronously"""
+        if not self.is_active:
+            logger.warn(f'Module not active when triggering event [{event}]')
+        if event is None:
+            event = self._name + '_event'
+        if not 'metadata' in kwargs:
+            kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
+        self._function_references.trigger_event_threadsafe(event, **kwargs)
 
     def register_task(self, task):
         """Register a task for exception handling and management"""
