@@ -142,18 +142,6 @@ class ModuleManager(object):
             await self.broadcast_event_internal('initiate_shutdown', metadata=self.create_metadata(), asynchronous=False)
             await self.broadcast_event_internal('finalize_shutdown', metadata=self.create_metadata(), asynchronous=False)
 
-    def broadcast_event_threadsafe(self, event, metadata, asynchronous=True, **kwargs):
-        """Handle an event while ensuring that no other task is running in parallel"""
-        logger.debug(f'Broadcasting event [{event}({str(kwargs)})] in a threadsafe manner')
-        asyncio.run_coroutine_threadsafe(self.broadcast_event_internal(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs), self.loop)
-
-    async def broadcast_event(self, event, metadata, asynchronous=True, **kwargs):
-        """Handle an event, getting a lock if needed"""
-        if self._thread_reference == threading.current_thread():
-            return await self.broadcast_event_internal(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs)
-        else:
-            return self.broadcast_event_threadsafe(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs)
-
     async def enqueue_task_internal(self, target, metadata, **kwargs):
         """Enqueue the provided task for asynchronous execution"""
         logger.debug(f'Enqueuing task [{target}({str(kwargs)})]')
@@ -188,6 +176,18 @@ class ModuleManager(object):
             return await self.trigger_event_internal(target=target, metadata=metadata, **kwargs)
         else:
             return self.trigger_event_threadsafe(target=target, metadata=metadata, **kwargs)
+
+    def broadcast_event_threadsafe(self, event, metadata, asynchronous=True, **kwargs):
+        """Handle an event while ensuring that no other task is running in parallel"""
+        logger.debug(f'Broadcasting event [{event}({str(kwargs)})] in a threadsafe manner')
+        asyncio.run_coroutine_threadsafe(self.broadcast_event_internal(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs), self.loop)
+
+    async def broadcast_event(self, event, metadata, asynchronous=True, **kwargs):
+        """Handle an event, getting a lock if needed"""
+        if self._thread_reference == threading.current_thread():
+            return await self.broadcast_event_internal(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs)
+        else:
+            return self.broadcast_event_threadsafe(event=event, metadata=metadata, asynchronous=asynchronous, **kwargs)
 
     async def process_item(self, item):
         """Process an item from the event queue"""
