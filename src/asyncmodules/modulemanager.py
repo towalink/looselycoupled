@@ -88,6 +88,7 @@ class ModuleManager(object):
                     else:
                         logger.warning('Starting the next task after a long wait; check reasons for long running tasks')
                         break  # don't wait indefinitely
+                logger.debug('Waiting done')
 
         logger.debug(f'Calling method asynchronously [{module}.{methodname}({str(kwargs)})]')
         await wait_for_free_task_slot()
