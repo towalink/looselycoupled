@@ -2,10 +2,14 @@
 
 import asyncio
 import enum
-import gpiod
 import logging
 import threading
 import time
+
+try:
+    import gpiod
+except ModuleNotFoundError:
+    from asyncmodules import gpiod_mock as gpiod
 
 from asyncmodules import module
 

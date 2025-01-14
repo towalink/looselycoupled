@@ -1,6 +1,10 @@
-from asyncmodules import module_gpiod
 import datetime
-import gpiod
+try:
+    import gpiod
+except ModuleNotFoundError:
+    from asyncmodules import gpiod_mock as gpiod
+
+from asyncmodules import module_gpiod
 
 
 class GpiodExample(module_gpiod.ModuleGpiod):
