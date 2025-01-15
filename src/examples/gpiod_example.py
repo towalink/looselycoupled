@@ -26,5 +26,10 @@ class GpiodExample(module_gpiod.ModuleGpiod):
                        }
         await super().initialize('/dev/gpiochip0', input_lines=input_lines, output_lines=output_lines)
 
+        await self.set_output_state(4, module_gpiod.OutputState.BLINK_VERYSLOW)
+        await self.set_output_state(17, module_gpiod.OutputState.BLINK_VERYSLOW)
+        await self.set_output_state(27, module_gpiod.OutputState.BLINK_SLOW)
+
+
 
 module_class = GpiodExample
