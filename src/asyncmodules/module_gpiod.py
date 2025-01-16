@@ -11,7 +11,7 @@ try:
 except ModuleNotFoundError:
     from asyncmodules import gpiod_mock as gpiod
 
-from asyncmodules import module
+from asyncmodules import module_threaded
 
 
 logger = logging.getLogger(__name__)
@@ -142,7 +142,7 @@ class BlinkRhythms(dict):
                     rhythm.time_remaining = rhythm.time_on if rhythm.active else rhythm.time_off
 
 
-class ModuleGpiod(module.Module):
+class ModuleGpiod(module_threaded.ModuleThreaded):
     """Application module for accessing GPIOs using the gpiod library"""
 
     async def initialize(self, chip_name='/dev/gpiochip0', input_lines=[], output_lines=[]):
@@ -195,7 +195,7 @@ class ModuleGpiod(module.Module):
             raise ValueError(f'Output line [{line}] not handled')
         self.outputs.set_state(line, state_new)
 
-    def thread_monitor_inputs(self):
+    def thread_run_passively(self):
         """Thread for monitoring input lines"""
         with self.chip.request_lines(consumer='asyncmodules-gpiod-in', config=self.input_lines) as request:
             while self.is_active:
@@ -207,7 +207,7 @@ class ModuleGpiod(module.Module):
                         logger.info(f"Input event on line [{event.line_offset}:{event.line_seqno}]: {'rising edge' if rising_edge else 'falling edge'}")
                         self.trigger_event_threadsafe('changed_gpio_input', line=event.line_offset, line_seq={event.line_seqno}, rising_edge=rising_edge)
 
-    def thread_manage_outputs(self):
+    def thread_run(self):
         """Thread for controlling output lines"""
         with self.chip.request_lines(consumer='asyncmodules-gpiod-out', config=self.output_lines) as request:
             while self.is_ready:
@@ -228,18 +228,3 @@ class ModuleGpiod(module.Module):
             # Finally switch off everything
             outputs_new = { line: gpiod.line.Value.INACTIVE for line, output in self.outputs.items() }
             request.set_values(outputs_new)
-
-    async def run_passively(self, metadata):
-        """Runs the module, process tasks/events (initiate new tasks/events only for handling them)"""
-        coro_output = asyncio.to_thread(self.thread_manage_outputs)
-        task_output = asyncio.create_task(coro_output)
-        self.register_task(task_output)
-
-    async def run(self, metadata):
-        """Runs the module, may actively initiate new tasks/events"""
-        coro_input = asyncio.to_thread(self.thread_monitor_inputs)
-        task_input = asyncio.create_task(coro_input)
-        self.register_task(task_input)
-
-
-module_class = ModuleGpiod
