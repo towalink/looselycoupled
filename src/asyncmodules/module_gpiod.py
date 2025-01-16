@@ -41,6 +41,29 @@ class Output():
         self.blinktime_on = 0  # on time in milliseconds
         self.blinktime_remaining = 0 #  time until next toggle in milliseconds
 
+    def set_state(self, state_new):
+        """Sets the output state for the given line"""
+        if self.state != state_new:
+            self.state = state_new
+            if state_new == OutputState.OFF:
+                self.set_output_value(False)
+            elif state_new == OutputState.ON:
+                self.set_output_value(True)
+            else:  # blink
+                # Change something immediately to indicate state change to the user
+                self.toggle_value()
+
+    def set_output_value(self, active):
+        """Sets the output value of the given line"""
+        value_new = gpiod.line.Value.ACTIVE if active else gpiod.line.Value.INACTIVE
+        self.value_new = value_new
+        return value_new
+
+    def toggle_value(self):
+        """Toggles the given output and returns the new value"""
+        value_new = (self.value == gpiod.line.Value.INACTIVE)
+        return self.set_output_value(value_new)
+
 
 class Outputs(dict):
     """Class for keeping the state of all considered outputs as a dictionary of Output objects"""
@@ -51,16 +74,6 @@ class Outputs(dict):
         for line_offset in line_offsets:
             self[line_offset] = Output(line_offset)
 
-    def set_output_value(self, line, active):
-        """Sets the output value of the given line"""
-        value_new = gpiod.line.Value.ACTIVE if active else gpiod.line.Value.INACTIVE
-        self[line].value_new = value_new
-        return value_new
-
-    def toggle_value(self, line):
-        """Toggles the given output and returns the new value"""
-        return self.set_output_value(line, self[line] == gpiod.line.Value.INACTIVE)
-
     def get_changes_and_apply(self):
         """Makes the new values current and returns a dictionary of changes values"""
         outputs_new = dict()
@@ -69,21 +82,6 @@ class Outputs(dict):
                 output.value = output.value_new
                 outputs_new[line] = output.value_new
         return outputs_new
-
-    def get_state(self, line):
-        """Returns the output state for the given line"""
-        return self[line].state
-
-    def set_state(self, line, state_new):
-        """Sets the output state for the given line"""
-        if self[line] != state_new:
-            self[line].state = state_new
-            if state_new == OutputState.OFF:
-                self.set_output_value(line, False)
-            elif state_new == OutputState.ON:
-                self.set_output_value(line, True)
-            else:  # blink
-                self.toggle_value(line)  # change something immediately to indicate state change to the user
 
 
 class BlinkRhythm():
@@ -138,7 +136,7 @@ class BlinkRhythms(dict):
                     rhythm.active = not rhythm.active
                     for line, output in outputs.items():
                         if output.state == id:
-                            outputs.set_output_value(line, rhythm.active)
+                            outputs[line].set_output_value(rhythm.active)
                     rhythm.time_remaining = rhythm.time_on if rhythm.active else rhythm.time_off
 
 
@@ -185,7 +183,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
     async def get_output_state(self, line):
         """Get the state of the output with the specified line offset"""
         try:
-            return self.outputs[line].get_state(line)
+            return self.outputs[line].state
         except KeyError:
             raise ValueError(f'Output line [{line}] not handled')
 
@@ -193,7 +191,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
         """Set output state"""
         if line not in self.outputs.keys():
             raise ValueError(f'Output line [{line}] not handled')
-        self.outputs.set_state(line, state_new)
+        self.outputs[line].set_state(state_new)
 
     def thread_run_passively(self):
         """Thread for monitoring input lines"""

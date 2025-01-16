@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 
@@ -35,11 +34,13 @@ class WebApp():
     def index(self, action=None, id=None, action_selection=None):
         """Show a list of existing machines"""
         #cherrypy.log(str(vms), context='WEBAPP', severity=logging.INFO, traceback=False)
+
         # Examples for calling asyncmodules methods outside the event loop thread
         pos = self.exec_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was synchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
         self.enqueue_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was asynchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
         # Note: the following is not sent to our local event handler due to split horizon (don't send notifications to event source)
         self.trigger_event_threadsafe('my_simple_example_event', param='This line was asynchronously added by the module "cherrypy_example" by triggering an event from a non-coroutine in another thread')
+
         # Render page
         tmpl = self.jinja_env.get_template('index.html')
         return tmpl.render(sessiondata=cherrypy.session, outputlines=self.lines)
