@@ -26,8 +26,8 @@ class ModuleManager(object):
         self._exception_path = exception_path
         self._modules = OrderedDict()
         self._thread_reference = threading.current_thread() 
-        self._running_tasks = set()
-        self._finished_tasks = set()
+        self._running_tasks = dict()
+        self._finished_tasks = dict()
         self._exit = False
         self.register_modules(appmodules)
 
@@ -42,6 +42,7 @@ class ModuleManager(object):
         self._modules[modulename] = module_obj
 
     def register_modules(self, appmodules):
+        """Register all modules in the provided dictionary"""
         if appmodules is not None:
             for modulename, moduleunit in appmodules.items():
                 self.register_module(modulename, moduleunit)
@@ -52,10 +53,14 @@ class ModuleManager(object):
             return False
         return self._modules[modulename].is_ready
 
+    def get_running_task_names(self):
+        """Returns a list of names of all running tasks"""
+        return self._running_tasks.values()
+
     def task_done_callback(self, task):
         """React on a finished coroutine"""
-        self._running_tasks.discard(task)
-        self._finished_tasks.add(task)
+        self._finished_tasks[task] = self._running_tasks[task]
+        del self._running_tasks[task]        
         try:
             task.result()
         except Exception as e:
@@ -69,32 +74,39 @@ class ModuleManager(object):
                     traceback.print_exc(file=handle)
                     handle.write('\n')                
 
-    def register_task(self, task):
+    def register_task(self, task, name='[unnamed]'):
         """Register a task for exception handling and management"""
-        self._running_tasks.add(task)
+        self._running_tasks[task] = name
         task.add_done_callback(self.task_done_callback)
 
     async def call_method_async(self, module, methodname, log_unknown=True, **kwargs):
         """Call a method asynchronously as a separate asyncio coroutine"""
+        methodinfo = f'{module.name}.{methodname}({str(kwargs)})'
 
         async def wait_for_free_task_slot():
-            if len(self._running_tasks) > 2 * len(self._modules):
-                logger.info('Waiting for free slot before starting the next task')
+            wait_condition = lambda: len(self._running_tasks) > len(self._modules)
+            if wait_condition():
+                logger.info(f'Waiting for free slot before starting the next task [{methodinfo}]')
                 sleeptime = 0.001  # start with one millisecond
-                while len(self._running_tasks) > len(self._modules):
+                while wait_condition():
                     await asyncio.sleep(sleeptime)
                     if sleeptime < 1:
                         sleeptime *= 2  # double sleeptime in each iteration
                     else:
-                        logger.warning('Starting the next task after a long wait; check reasons for long running tasks')
+                        logger.warning(f'Starting the next task [{methodinfo}] after a long wait; check reasons for long running tasks')
                         break  # don't wait indefinitely
                 logger.debug('Waiting done')
 
-        logger.debug(f'Calling method asynchronously [{module}.{methodname}({str(kwargs)})]')
-        await wait_for_free_task_slot()
-        task = asyncio.create_task(module.call_method(methodname, log_unknown, **kwargs))
-        self.register_task(task)
-        return task
+        if module.get_method(methodname) is not None:
+            logger.debug(f'Calling method asynchronously [{methodinfo}]')
+            await wait_for_free_task_slot()
+            task = asyncio.create_task(module.call_method(methodname, log_unknown, **kwargs))
+            self.register_task(task, name=methodinfo)
+            return task
+        else:
+            if log_unknown:
+                logger.error(f'Called method [{methodname}] unknown in module [{module.name}]')
+            return None
 
     async def exec_task_internal(self, target, metadata, asynchronous=False, **kwargs):
         """Execute the specified task (target specifies the method to be called) synchronously with the given arguments"""
@@ -199,7 +211,7 @@ class ModuleManager(object):
 
     async def gather_finished_tasks(self):
         """Gather all finished tasks"""
-        await asyncio.gather(*self._finished_tasks, return_exceptions=True)
+        await asyncio.gather(*(self._finished_tasks.keys()), return_exceptions=True)
         self._finished_tasks.clear()
 
     async def queue_empty(self):
@@ -207,7 +219,7 @@ class ModuleManager(object):
         await self.gather_finished_tasks()  # clean up finished stuff
         await self.broadcast_event('becoming_idle', metadata=self.create_metadata())
         if self._exit:
-            await asyncio.gather(*self._running_tasks, return_exceptions=True)
+            await asyncio.gather(*(self._running_tasks.keys()), return_exceptions=True)
             if not len(self._running_tasks):
                 return True
         return False
@@ -248,8 +260,7 @@ class ModuleManager(object):
                     logger.info('Keyboard interrupt received. Exiting...')
                     # Shutdown by broadcasting shutdown event
                     task = loop.create_task(self.trigger_event(event='exit', metadata=self.create_metadata()))
-                    self._running_tasks.add(task)
-                    task.add_done_callback(self.task_done_callback)
+                    self.register_task(task, name='triggering of exit event')
             tasks = asyncio.all_tasks(loop)
             for task in tasks:
                 logger.warning(f'Cancelling task [{task}]')

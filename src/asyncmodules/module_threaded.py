@@ -21,7 +21,7 @@ class ModuleThreaded(module.Module):
             logger.debug(f'Starting separate thread for executing [{method_name}]...')
             coro_output = asyncio.to_thread(method)
             task_output = asyncio.create_task(coro_output)
-            self.register_task(task_output)
+            self.register_task(task_output, name=f'{self.name}.{method_name} (separate thread)')
 
     async def run_passively(self, metadata):
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them)"""

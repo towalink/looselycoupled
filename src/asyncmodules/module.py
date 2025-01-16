@@ -32,24 +32,28 @@ class Module():
         self._task_active = None
         self._state = States.inactive
 
-    async def call_method(self, methodname, log_unknown=True, **kwargs):
+    def get_method(self, methodname):
+        """Returns a reference to the method with the given name"""
         try:
             method = getattr(self, methodname)
         except AttributeError:
             method = None
-        if method is not None:
+        return method
+
+    async def call_method(self, methodname, log_unknown=True, **kwargs):
+        if (method := self.get_method(methodname)) is not None:
             if inspect.iscoroutinefunction(method):
                 return await method(**kwargs)
             else:
                 return method(**kwargs)
         else:
             if log_unknown:
-                logger.error(f'Called method [{methodname}] unknown in module [{self._name}]')
+                logger.error(f'Called method [{methodname}] unknown in module [{self.name}]')
 
     async def exec_task(self, task, **kwargs):
         """Helper method for synchronous execution of a task"""
         if not 'metadata' in kwargs:
-            kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
+            kwargs['metadata'] = Metadata(source_obj=self, source_name=self.name)
         return await self._function_references.exec_task(task, **kwargs)
 
     def exec_task_threadsafe(self, task, **kwargs):
@@ -98,9 +102,9 @@ class Module():
             kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
         self._function_references.trigger_event_threadsafe(event, **kwargs)
 
-    def register_task(self, task):
+    def register_task(self, task, name):
         """Register a task for exception handling and management"""
-        return self._function_references.register_task(task)
+        return self._function_references.register_task(task, name)
 
     def get_config(self, itemname, default=None):
         """Return a configuration item"""
@@ -167,6 +171,10 @@ class Module():
         if self._task_passive is not None:
             asyncio.gather(self._task_passive, return_exceptions=True)
             self._task_passive = None
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def State(self):
