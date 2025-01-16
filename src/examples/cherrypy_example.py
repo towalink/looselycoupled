@@ -7,6 +7,7 @@ import cherrypy
 import jinja2
 import logging
 import os
+import time
 
 from asyncmodules import module
 
@@ -136,15 +137,22 @@ class CherryPyExample(module.Module):
         """React on event notification"""
         await self.add_log_entry(param)
 
-    async def run(self, metadata):
-        """Runs the module, may actively initiate new tasks/events"""
+    def thread_run_cherrypy(self):
         logger.info('Starting CherryPy webserver...')
         cherrypy.engine.start()
         while self.is_active:
-            await asyncio.sleep(1)
+            time.sleep(1)
+        logger.info('Stopping CherryPy webserver...')
         cherrypy.engine.exit()
-        cherrypy.engine.block()  # wait for the engine to complete the shutdown
+        # Don't call the following as it also attempts to wait for non-CherryPy-threads in a blocking manner
+        #cherrypy.engine.block()  # wait for the engine to complete the shutdown
         logger.info('CherryPy webserver stopped')
+
+    async def run(self, metadata):
+        """Runs the module, may actively initiate new tasks/events"""
+        coro = asyncio.to_thread(self.thread_run_cherrypy)
+        task = asyncio.create_task(coro)
+        self.register_task(task)
 
 
 module_class = CherryPyExample

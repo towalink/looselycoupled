@@ -231,19 +231,15 @@ class ModuleGpiod(module.Module):
 
     async def run_passively(self, metadata):
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them)"""
-        await asyncio.to_thread(self.thread_manage_outputs)
-        #coro_output = asyncio.to_thread(self.thread_manage_outputs)
-        #task_output = asyncio.create_task(coro_output)
-        #self.register_task(task_output)
-        #await asyncio.gather(task_output, return_exceptions=True)
+        coro_output = asyncio.to_thread(self.thread_manage_outputs)
+        task_output = asyncio.create_task(coro_output)
+        self.register_task(task_output)
 
     async def run(self, metadata):
         """Runs the module, may actively initiate new tasks/events"""
-        await asyncio.to_thread(self.thread_monitor_inputs)
-        #coro_input = asyncio.to_thread(self.thread_monitor_inputs)
-        #task_input = asyncio.create_task(coro_input)
-        #self.register_task(task_input)
-        #await asyncio.gather(task_input, return_exceptions=True)
+        coro_input = asyncio.to_thread(self.thread_monitor_inputs)
+        task_input = asyncio.create_task(coro_input)
+        self.register_task(task_input)
 
 
 module_class = ModuleGpiod
