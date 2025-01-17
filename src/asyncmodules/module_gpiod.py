@@ -37,9 +37,6 @@ class Output():
         self.state = OutputState.OFF  # high-level state: Off/Blink*/On
         self.value = gpiod.line.Value.INACTIVE  # current output value
         self.value_new = gpiod.line.Value.INACTIVE  # new output value to be provisioned
-        self.blinktime_off = 0  # off time in milliseconds
-        self.blinktime_on = 0  # on time in milliseconds
-        self.blinktime_remaining = 0 #  time until next toggle in milliseconds
 
     def set_state(self, state_new):
         """Sets the output state for the given line"""
@@ -126,7 +123,7 @@ class BlinkRhythms(dict):
                 blinktime = rhythm.time_on if rhythm.active else rhythm.time_off
                 toggle = False
                 if ms > rhythm.time_remaining:
-                    logger.warning('Elapsed time is greater than expected next wakeup time')
+                    logger.warning(f'Elapsed time [{ms} ms] is greater than expected next wakeup time [{rhythm.time_remaining} ms]')
                     rhythm.time_remaining = 0
                     toggle = True
                 else:
@@ -192,6 +189,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
         if line not in self.outputs.keys():
             raise ValueError(f'Output line [{line}] not handled')
         self.outputs[line].set_state(state_new)
+        self.event_wakeup_output.set()  # notify the output change
 
     def thread_run_passively(self):
         """Thread for monitoring input lines"""
@@ -215,7 +213,8 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
                 event_occurred = self.event_wakeup_output.wait(timeout=wakeup_ms/1000)
                 if event_occurred:
                     elapsed_time = time.time() - start_time
-                    wakeup_ms = elapsed_time * 1000
+                    wakeup_ms = min(wakeup_ms, int(elapsed_time * 1000))
+                    logger.debug(f'Woke up early after [{wakeup_ms}] due to notification')
                 self.blinkrhythms.elapse_time(wakeup_ms, self.outputs)
                 # Apply changes output values
                 outputs_new = self.outputs.get_changes_and_apply()
