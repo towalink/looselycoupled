@@ -141,7 +141,7 @@ class CherryPyExample(module_threaded.ModuleThreaded):
     def thread_run(self):
         logger.info('Starting CherryPy webserver...')
         cherrypy.engine.start()
-        while self.is_active:
+        while not self.event_no_longer_active.is_set():
             time.sleep(1)
         logger.info('Stopping CherryPy webserver...')
         cherrypy.engine.exit()

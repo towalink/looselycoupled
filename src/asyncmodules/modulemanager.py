@@ -79,12 +79,12 @@ class ModuleManager(object):
         self._running_tasks[task] = name
         task.add_done_callback(self.task_done_callback)
 
-    async def call_method_async(self, module, methodname, log_unknown=True, **kwargs):
+    async def schedule_method(self, module, methodname, log_unknown=True, **kwargs):
         """Call a method asynchronously as a separate asyncio coroutine"""
         methodinfo = f'{module.name}.{methodname}({str(kwargs)})'
 
         async def wait_for_free_task_slot():
-            wait_condition = lambda: len(self._running_tasks) > len(self._modules)
+            wait_condition = lambda: len(self._running_tasks) > 3 * len(self._modules)  # adapt rule if needed
             if wait_condition():
                 logger.info(f'Waiting for free slot before starting the next task [{methodinfo}]')
                 sleeptime = 0.001  # start with one millisecond
@@ -98,7 +98,7 @@ class ModuleManager(object):
                 logger.debug('Waiting done')
 
         if module.get_method(methodname) is not None:
-            logger.debug(f'Calling method asynchronously [{methodinfo}]')
+            logger.debug(f'Scheduling method call asynchronously [{methodinfo}]')
             await wait_for_free_task_slot()
             task = asyncio.create_task(module.call_method(methodname, log_unknown, **kwargs))
             self.register_task(task, name=methodinfo)
@@ -120,7 +120,7 @@ class ModuleManager(object):
             logger.error(f'Unknown module [{modulename}] for task [{target}]')
         else:
             if asynchronous:
-                await self.call_method_async(module, methodname, **kwargs)
+                await self.schedule_method(module, methodname, **kwargs)
                 return False            
             else:
                 return await module.call_method(methodname, **kwargs)
@@ -145,7 +145,7 @@ class ModuleManager(object):
         for modulename, module_obj in self._modules.items():
             if metadata.source_obj != module_obj:  # split horizon, don't provide event to source
                 if asynchronous:
-                    await self.call_method_async(module_obj, event, log_unknown=False, **kwargs)
+                    await self.schedule_method(module_obj, event, log_unknown=False, **kwargs)
                 else:
                     await module_obj.call_method(event, log_unknown=False, **kwargs)
         if event == 'on_exit':
@@ -231,9 +231,14 @@ class ModuleManager(object):
         task_eventloop = asyncio.create_task(self._eventloop.run_eventloop())
         # Initialize modules
         await self.broadcast_event_internal('startup', metadata=self.create_metadata(), asynchronous=False)
+        logger.debug(f'Startup done; application-wide scheduled tasks: {self.get_running_task_names()}')
+        asyncio.sleep(0)  # let other tasks run first (not really needed but makes sense)
         await self.broadcast_event_internal('activate', metadata=self.create_metadata(), asynchronous=False)
+        logger.debug(f'Activation done; application-wide scheduled tasks: {self.get_running_task_names()}')
+        asyncio.sleep(0)  # let other tasks run first (not really needed but makes sense)
         # Wait for the event loop to terminate
         await task_eventloop
+        logger.debug(f'Event loop ended')
         # Final clean-up
         await self.gather_finished_tasks()
 
@@ -261,11 +266,13 @@ class ModuleManager(object):
                     # Shutdown by broadcasting shutdown event
                     task = loop.create_task(self.trigger_event(event='exit', metadata=self.create_metadata()))
                     self.register_task(task, name='triggering of exit event')
+            logger.debug('Asyncio event-loop complete')
             tasks = asyncio.all_tasks(loop)
             for task in tasks:
                 logger.warning(f'Cancelling task [{task}]')
                 task.cancel()
             loop.stop()
+            logger.debug('Asyncio event-loop stopped')            
         finally:
             loop.close()
 
@@ -277,7 +284,7 @@ class ModuleManager(object):
             'enqueue_task', 'enqueue_task_threadsafe',
             'exec_task', 'exec_task_threadsafe',
             'broadcast_event', 
-            'call_method_async', 
+            'schedule_method', 
             'register_task'
         ])
         return FunctionReferences(
@@ -285,6 +292,6 @@ class ModuleManager(object):
             self.enqueue_task, self.enqueue_task_threadsafe,
             self.exec_task, self.exec_task_threadsafe,
             self.broadcast_event, 
-            self.call_method_async, 
+            self.schedule_method, 
             self.register_task
         )

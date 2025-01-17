@@ -4,6 +4,7 @@ import asyncio
 import enum
 import inspect
 import logging
+import threading
 
 from . import configuration
 from . import eventloop
@@ -31,6 +32,8 @@ class Module():
         self._task_passive = None
         self._task_active = None
         self._state = States.inactive
+        self.event_no_longer_active = threading.Event()
+        self.event_no_longer_passive = threading.Event()
 
     def get_method(self, methodname):
         """Returns a reference to the method with the given name"""
@@ -142,18 +145,21 @@ class Module():
     async def startup(self):
         """Initialization of the module (get config)"""
         await self.initialize()
+        self.event_no_longer_passive.clear()        
         # asyncio.create_task(self._run_passively()) with exception handling:        
-        self._task_passive = await self._function_references.call_method_async(self, '_run_passively')
+        self._task_passive = await self._function_references.schedule_method(self, '_run_passively')
 
     async def activate(self):
         """Go into active state"""
+        self.event_no_longer_active.clear()        
         # asyncio.create_task(self._run()) with exception handling:
-        self._task_active = await self._function_references.call_method_async(self, '_run')
+        self._task_active = await self._function_references.schedule_method(self, '_run')
 
     async def deactivate(self):
         """Go back into passive state (trigger stopping of "active" coroutine)"""
         if self.State == States.active:
             self.State = States.passive
+            self.event_no_longer_active.set()
 
     async def initiate_shutdown(self):
         """Shutdown the module (prepare/initiate shutdown; trigger stopping of "passive" coroutine)"""
@@ -163,6 +169,7 @@ class Module():
             self._task_active = None
         # We're going into "inactive" state now
         self.State = States.inactive
+        self.event_no_longer_passive.set()
 
     async def finalize_shutdown(self):
         """Shutdown the module (cleanup activities)"""

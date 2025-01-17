@@ -196,7 +196,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
     def thread_run_passively(self):
         """Thread for monitoring input lines"""
         with self.chip.request_lines(consumer='asyncmodules-gpiod-in', config=self.input_lines) as request:
-            while self.is_active:
+            while not self.event_no_longer_passive.is_set():
                 time.sleep(0.01)  # collect events for 10ms before listening (to reduce processing overhead)
                 if request.wait_edge_events(timeout=1):
                     events = request.read_edge_events()
@@ -208,7 +208,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
     def thread_run(self):
         """Thread for controlling output lines"""
         with self.chip.request_lines(consumer='asyncmodules-gpiod-out', config=self.output_lines) as request:
-            while self.is_ready:
+            while not self.event_no_longer_active.is_set():
                 # Sleep until next output toggle takes place or event is fired
                 start_time = time.time()
                 wakeup_ms = self.blinkrhythms.get_time_wakeup()
