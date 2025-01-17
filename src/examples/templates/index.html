@@ -3,6 +3,10 @@
       <h3>Output</h3>
       <div class='form'>
         <form method="get">
+          <div class="buttonrow">
+            <button class="button buttonhighlight" type="submit" name="action" value="trigger">Trigger Action</button>
+            <!-- <button class="button buttonhighlight" type="submit" name="action" value="trigger" formaction="trigger">Trigger Action</button> -->
+          </div>
           <div class="table">
           {%- for item, itemdata in outputlines.items() %}
             <div class="line"></div>

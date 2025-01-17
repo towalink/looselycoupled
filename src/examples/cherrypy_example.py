@@ -31,15 +31,17 @@ class WebApp():
         return pos
 
     @cherrypy.expose
-    def index(self, action=None, id=None, action_selection=None):
+    def index(self, action=None, id=None):
         """Show a list of existing machines"""
-        #cherrypy.log(str(vms), context='WEBAPP', severity=logging.INFO, traceback=False)
-
-        # Examples for calling asyncmodules methods outside the event loop thread
-        pos = self.exec_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was synchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
-        self.enqueue_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was asynchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
-        # Note: the following is not sent to our local event handler due to split horizon (don't send notifications to event source)
-        self.trigger_event_threadsafe('my_simple_example_event', param='This line was asynchronously added by the module "cherrypy_example" by triggering an event from a non-coroutine in another thread')
+        #cherrypy.log('Index page requested', context='WEBAPP', severity=logging.INFO, traceback=False)
+        logger.info(f'Index page requested, action [{action}], id [{id}]')
+        
+        if action == 'trigger':
+            # Examples for calling asyncmodules methods outside the event loop thread
+            pos = self.exec_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was synchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
+            self.enqueue_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was asynchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
+            self.trigger_event_threadsafe('webpage_trigger')
+            # Note: can't broadcast an event to our local event handler due to split horizon (don't send notifications to event source)            
 
         # Render page
         tmpl = self.jinja_env.get_template('index.html')
