@@ -139,22 +139,6 @@ class ModuleManager(object):
         else:
             return self.exec_task_threadsafe(target, metadata, asynchronous, **kwargs)
 
-    async def broadcast_event_internal(self, event, metadata, asynchronous=True, **kwargs):
-        """Immediately send the specified event with the given arguments to all participants with a matching event handler"""
-        logger.debug(f'Broadcasting event [{event}({str(kwargs)})')
-        for modulename, module_obj in self._modules.items():
-            if metadata.source_obj != module_obj:  # split horizon, don't provide event to source
-                if asynchronous:
-                    await self.schedule_method(module_obj, event, log_unknown=False, **kwargs)
-                else:
-                    await module_obj.call_method(event, log_unknown=False, **kwargs)
-        if event == 'on_exit':
-            logger.info('Shutting down after on_exit event notification...')
-            self._exit = True
-            await self.broadcast_event_internal('deactivate', metadata=self.create_metadata(), asynchronous=False)
-            await self.broadcast_event_internal('initiate_shutdown', metadata=self.create_metadata(), asynchronous=False)
-            await self.broadcast_event_internal('finalize_shutdown', metadata=self.create_metadata(), asynchronous=False)
-
     async def enqueue_task_internal(self, target, metadata, **kwargs):
         """Enqueue the provided task for asynchronous execution"""
         logger.debug(f'Enqueuing task [{target}({str(kwargs)})]')
@@ -172,23 +156,39 @@ class ModuleManager(object):
         else:
             return self.enqueue_task_threadsafe(target=target, metadata=metadata, **kwargs)
 
-    async def trigger_event_internal(self, target, metadata, **kwargs):
+    async def trigger_event_internal(self, event, metadata, **kwargs):
         """Enqueue the provided event for asynchronous event handling"""
+        target = 'on_' + event
         logger.debug(f'Triggering event target [{target}({str(kwargs)})]')        
         await self._eventloop.queue.put(target=target, metadata=metadata, kwargs=kwargs)
 
-    def trigger_event_threadsafe(self, target, metadata, **kwargs):
+    def trigger_event_threadsafe(self, event, metadata, **kwargs):
         """Enqueue the provided event for asynchronous event handling"""
-        logger.debug(f'Triggering event target [{target}({str(kwargs)})] in a threadsafe manner')
-        asyncio.run_coroutine_threadsafe(self.trigger_event_internal(target=target, metadata=metadata, **kwargs), self.loop)
+        logger.debug(f'Triggering event [{event}({str(kwargs)})] in a threadsafe manner')
+        asyncio.run_coroutine_threadsafe(self.trigger_event_internal(event=event, metadata=metadata, **kwargs), self.loop)
 
     async def trigger_event(self, event, metadata, **kwargs):
         """Enqueue the provided event for asynchronous event handling"""
-        target = 'on_' + event
         if self._thread_reference == threading.current_thread():
-            return await self.trigger_event_internal(target=target, metadata=metadata, **kwargs)
+            return await self.trigger_event_internal(event=event, metadata=metadata, **kwargs)
         else:
-            return self.trigger_event_threadsafe(target=target, metadata=metadata, **kwargs)
+            return self.trigger_event_threadsafe(event=event, metadata=metadata, **kwargs)
+
+    async def broadcast_event_internal(self, event, metadata, asynchronous=True, **kwargs):
+        """Immediately send the specified event with the given arguments to all participants with a matching event handler"""
+        logger.debug(f'Broadcasting event [{event}({str(kwargs)})')
+        for modulename, module_obj in self._modules.items():
+            if metadata.source_obj != module_obj:  # split horizon, don't provide event to source
+                if asynchronous:
+                    await self.schedule_method(module_obj, event, log_unknown=False, **kwargs)
+                else:
+                    await module_obj.call_method(event, log_unknown=False, **kwargs)
+        if event == 'on_exit':
+            logger.info('Shutting down after on_exit event notification...')
+            self._exit = True
+            await self.broadcast_event_internal('deactivate', metadata=self.create_metadata(), asynchronous=False)
+            await self.broadcast_event_internal('initiate_shutdown', metadata=self.create_metadata(), asynchronous=False)
+            await self.broadcast_event_internal('finalize_shutdown', metadata=self.create_metadata(), asynchronous=False)
 
     def broadcast_event_threadsafe(self, event, metadata, asynchronous=True, **kwargs):
         """Handle an event while ensuring that no other task is running in parallel"""
