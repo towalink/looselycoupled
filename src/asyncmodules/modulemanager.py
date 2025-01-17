@@ -232,10 +232,10 @@ class ModuleManager(object):
         # Initialize modules
         await self.broadcast_event_internal('startup', metadata=self.create_metadata(), asynchronous=False)
         logger.debug(f'Startup done; application-wide scheduled tasks: {self.get_running_task_names()}')
-        asyncio.sleep(0)  # let other tasks run first (not really needed but makes sense)
+        await asyncio.sleep(0)  # let other tasks run first (not really needed but makes sense)
         await self.broadcast_event_internal('activate', metadata=self.create_metadata(), asynchronous=False)
         logger.debug(f'Activation done; application-wide scheduled tasks: {self.get_running_task_names()}')
-        asyncio.sleep(0)  # let other tasks run first (not really needed but makes sense)
+        await asyncio.sleep(0)  # let other tasks run first (not really needed but makes sense)
         # Wait for the event loop to terminate
         await task_eventloop
         logger.debug(f'Event loop ended')
