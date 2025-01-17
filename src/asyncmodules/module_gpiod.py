@@ -101,17 +101,17 @@ class BlinkRhythms(dict):
     def __init__(self):
         """Instance initialization"""
         super().__init__()
-        self[OutputState.BLINK_VERYSLOW] = BlinkRhythm(1500, 1500)
-        self[OutputState.BLINK_SLOW] = BlinkRhythm(1200, 1200)
-        self[OutputState.BLINK] = BlinkRhythm(900, 900)
-        self[OutputState.BLINK_FAST] = BlinkRhythm(600, 600)
-        self[OutputState.BLINK_VERYFAST] = BlinkRhythm(300, 300)
+        self[OutputState.BLINK_VERYSLOW] = BlinkRhythm(2000, 2000)
+        self[OutputState.BLINK_SLOW] = BlinkRhythm(1600, 1600)
+        self[OutputState.BLINK] = BlinkRhythm(1200, 1200)
+        self[OutputState.BLINK_FAST] = BlinkRhythm(800, 800)
+        self[OutputState.BLINK_VERYFAST] = BlinkRhythm(400, 400)
 
     def get_time_wakeup(self):
         """Gets the time in milliseconds until the next wakeup for toggling"""
         time_wakeup = 1000  # wake up after 1s at latest
         for rhythm in self.values():
-            blinktime = rhythm.time_on if rhythm.active else rhythm.time_off
+            blinktime = rhythm.time_remaining
             if blinktime > 0:
                 time_wakeup = min(time_wakeup, blinktime)
         return time_wakeup
@@ -190,6 +190,12 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
             raise ValueError(f'Output line [{line}] not handled')
         self.outputs[line].set_state(state_new)
         self.event_wakeup_output.set()  # notify the output change
+
+    async def toggle_output_state(self, line):
+        """Toggles the state of the output with the specified line offset"""
+        state = await self.get_output_state(line)
+        state_new = OutputState.ON if (state == OutputState.OFF) else OutputState.OFF
+        await self.set_output_state(line, state_new)
 
     def thread_run_passively(self):
         """Thread for monitoring input lines"""
