@@ -17,16 +17,16 @@ cfg = configuration.get_config()
 
 class States(enum.Enum):
     """Define the states of a module"""
-    inactive = 1
-    passive = 2
-    active = 3
+    inactive = 1  # not ready for sending and receiving event notifications
+    passive = 2  # ready for receiving event notifications, not allowed to send yet
+    active = 3  # ready for receiving and sending event notifications
 
 
 class Module():
     """Application module (abstract class)"""
 
     def __init__(self, name, function_references):
-        """Constructor"""
+        """Instance initialization"""
         self._name = name
         self._function_references = function_references
         self._task_passive = None
@@ -44,6 +44,7 @@ class Module():
         return method
 
     async def call_method(self, methodname, log_unknown=True, **kwargs):
+        """Calles the method of this object instance with the given name and arguments; optionally logs if method unknown"""
         if (method := self.get_method(methodname)) is not None:
             if inspect.iscoroutinefunction(method):
                 return await method(**kwargs)
@@ -119,7 +120,7 @@ class Module():
 
     async def _run_passively(self):
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them); internal method"""
-        self.State = States.passive
+        self.state = States.passive
         logger.debug('Run module (passively)')
         metadata = Metadata(source_obj=self, source_name=self._name)
         await self.run_passively(metadata)
@@ -130,8 +131,8 @@ class Module():
 
     async def _run(self):
         """Runs the module, may actively initiate new tasks/events; internal method"""
-        if self.State == States.passive:
-            self.State = States.active
+        if self.state == States.passive:
+            self.state = States.active
         else:
             logger.warning(f'Attempted to activate module [{self._name}] that was not in passive state before')
         logger.debug('Run module')
@@ -157,8 +158,8 @@ class Module():
 
     async def deactivate(self):
         """Go back into passive state (trigger stopping of "active" coroutine)"""
-        if self.State == States.active:
-            self.State = States.passive
+        if self.state == States.active:
+            self.state = States.passive
             self.event_no_longer_active.set()
 
     async def initiate_shutdown(self):
@@ -168,7 +169,7 @@ class Module():
             asyncio.gather(self._task_active, return_exceptions=True)
             self._task_active = None
         # We're going into "inactive" state now
-        self.State = States.inactive
+        self.state = States.inactive
         self.event_no_longer_passive.set()
 
     async def finalize_shutdown(self):
@@ -184,18 +185,18 @@ class Module():
         return self._name
 
     @property
-    def State(self):
+    def state(self):
         return self._state
 
-    @State.setter
-    def State(self, newstate):
+    @state.setter
+    def state(self, newstate):
         self._state = newstate
         logger.debug(f'New state [{newstate}] for module [{self._name}]')
 
     @property
     def is_ready(self):
-        return (self.State == States.passive) or (self.State == States.active)
+        return (self.state == States.passive) or (self.state == States.active)
 
     @property
     def is_active(self):
-        return self.State == States.active
+        return self.state == States.active
