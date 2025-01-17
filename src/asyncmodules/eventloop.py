@@ -23,7 +23,7 @@ class EventLoop():
         """Gets and processes a single task from the queue"""
         # Get a single item
         priority, item = await self._queue.get()
-        logger.debug('Got item [[item]] from queue')
+        logger.debug(f'Got item [{item}] from queue')
         # Process a single item
         await self._process_item_func(item)
         self._queue.task_done()
