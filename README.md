@@ -21,6 +21,7 @@ For instance in smarthome applications, there are different components that need
 - Example code for often used modules provided, e.g. controller, CherryPy webserver, GPIO management via gpiod with generic support of input and output (incl. blinking).
 - Very lightweight due to small and manageable code base.
 
+<!--
 ---
 
 ## Installation
@@ -39,7 +40,6 @@ Download the provided Debian package (in the desired version) and install it:
 dpkg -i python3-asyncmodules_0.1.0-1_all.deb
 ```
 
-<!--
 ### Package for Alpine Linux
 
 You may install the Alpine package (https://pkgs.alpinelinux.org/packages?name=py3-asyncmodules) from Alpine's testing repository:
