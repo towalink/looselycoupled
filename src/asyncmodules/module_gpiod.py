@@ -198,21 +198,9 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
         await self.set_output_state(line, state_new)
 
     def thread_run_passively(self):
-        """Thread for monitoring input lines"""
-        with self.chip.request_lines(consumer='asyncmodules-gpiod-in', config=self.input_lines) as request:
-            while not self.event_no_longer_passive.is_set():
-                time.sleep(0.01)  # collect events for 10ms before listening (to reduce processing overhead)
-                if request.wait_edge_events(timeout=1):
-                    events = request.read_edge_events()
-                    for event in events:
-                        rising_edge = (event.event_type == event.Type.RISING_EDGE)
-                        logger.info(f"Input event on line [{event.line_offset}:{event.line_seqno}]: {'rising edge' if rising_edge else 'falling edge'}")
-                        self.trigger_event_threadsafe('changed_gpio_input', line=event.line_offset, line_seq={event.line_seqno}, rising_edge=rising_edge)
-
-    def thread_run(self):
         """Thread for controlling output lines"""
         with self.chip.request_lines(consumer='asyncmodules-gpiod-out', config=self.output_lines) as request:
-            while not self.event_no_longer_active.is_set():
+            while not self.event_no_longer_passive.is_set():
                 # Sleep until next output toggle takes place or event is fired
                 start_time = time.time()
                 wakeup_ms = self.blinkrhythms.get_time_wakeup()
@@ -231,3 +219,15 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
             # Finally switch off everything
             outputs_new = { line: gpiod.line.Value.INACTIVE for line, output in self.outputs.items() }
             request.set_values(outputs_new)
+
+    def thread_run(self):
+        """Thread for monitoring input lines"""
+        with self.chip.request_lines(consumer='asyncmodules-gpiod-in', config=self.input_lines) as request:
+            while not self.event_no_longer_active.is_set():
+                time.sleep(0.01)  # collect events for 10ms before listening (to reduce processing overhead)
+                if request.wait_edge_events(timeout=1):
+                    events = request.read_edge_events()
+                    for event in events:
+                        rising_edge = (event.event_type == event.Type.RISING_EDGE)
+                        logger.info(f"Input event on line [{event.line_offset}:{event.line_seqno}]: {'rising edge' if rising_edge else 'falling edge'}")
+                        self.trigger_event_threadsafe('changed_gpio_input', line=event.line_offset, line_seq={event.line_seqno}, rising_edge=rising_edge)
