@@ -34,9 +34,9 @@ class SimpleExampleModule(module.Module):
         await self.trigger_event('my_simple_example_event', param='This line was asynchronously added by the module "simple_example" by triggering an event')
 
         # Examples for setting metric data
-        await self.exec_task('prometheus.set_gauge_value', metadata=metadata, metric='example_metric', caption='This is just an example metric')
+        await self.exec_task('prometheus.set_gauge_value', metadata=metadata, metric='example_metric', documentation='This is just an example metric')
         await self.exec_task('prometheus.set_gauge_value', metadata=metadata, metric='example_metric', value=17)
-        await self.exec_task('prometheus.set_gauge_value', metadata=metadata, metric='example_metric_with_label', value=17, label_instance=1, caption='Metric with label "instance"')
+        await self.exec_task('prometheus.set_gauge_value', metadata=metadata, metric='example_metric_with_label', value=17, label_instance=1, documentation='Metric with label "instance"')
 
 
 module_class = SimpleExampleModule

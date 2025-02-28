@@ -14,9 +14,13 @@ import base64
 import logging
 import http.server
 import os
-import prometheus_client
 import ssl
 import threading
+
+try:
+    import prometheus_client
+except ModuleNotFoundError:
+    from . import mock_prometheus as prometheus_client
 
 from asyncmodules import configuration
 from asyncmodules import module_threaded
@@ -82,14 +86,14 @@ class ModulePrometheus(module_threaded.ModuleThreaded):
     async def set_gauge_value(self, metadata, metric, **kwargs):
         """Set metric value of type Gauge after ensuring metric exists"""
         # Check arguments for labels etc.
-        caption = '[no caption set]'
+        documentation = '[no documentation provided]'
         labels = dict()
         value = None
         for key, data in kwargs.items():
             if key.startswith('label_'):
                 labels[key[6:]] = data
-            elif key == 'caption':
-                caption = data
+            elif key == 'documentation':
+                documentation = data
             elif key == 'value':
                 value = data
             else:
@@ -97,7 +101,7 @@ class ModulePrometheus(module_threaded.ModuleThreaded):
         # Create metric if not yet present and finally set value
         with self.lock:
             if metric not in self.metrics:
-                self.metrics[metric] = prometheus_client.Gauge(metric, caption, labels.keys())
+                self.metrics[metric] = prometheus_client.Gauge(metric, documentation, labels.keys())
             if value:
                 if len(labels):
                     logger.info(str(value)) # ***

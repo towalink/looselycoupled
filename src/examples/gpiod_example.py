@@ -2,10 +2,11 @@
 
 import datetime
 import logging
+
 try:
     import gpiod
 except ModuleNotFoundError:
-    from asyncmodules import gpiod_mock as gpiod
+    from asyncmodules import mock_gpiod as gpiod
 
 from asyncmodules import module_gpiod
 
