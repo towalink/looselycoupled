@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
 import yaml
 
 
@@ -38,6 +39,14 @@ class Configuration():
 
     def __len__(self):
         return len(self._cfg)
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @property
+    def filedir(self):
+        return os.path.dirname(self._filename)
 
     def set_filename(self, filename):
         """Sets the file to read the configuration from"""
