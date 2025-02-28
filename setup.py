@@ -6,8 +6,8 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup_kwargs = {
-    'name': 'asyncmodule',
-    'version': '0.1.0',
+    'name': 'asyncmodules',
+    'version': '0.2.0',
     'author': 'Dirk Henrici',
     'author_email': 'towalink.asyncmodules@henrici.name',
     'description': 'simplistic asyncio-based framework for loosely coupling application modules that can interact synchronously and asynchronously (event queue)',
@@ -17,10 +17,18 @@ setup_kwargs = {
     'packages': setuptools.find_namespace_packages('src'),
     'package_dir': {'': 'src'},
     'include_package_data': True,
-    'install_requires': ['cherrypy',
-                         'jinja2',
-                         'pyyaml'
-                        ],
+    'install_requires': [
+        'pyyaml'
+    ],
+    'extras_require': {
+        'webserver': [
+            'cherrypy',
+            'jinja2'
+        ],
+        'prometheus': [
+            'prometheus-client'
+        ]
+    },
     'entry_points': '''
         [console_scripts]
         asyncmodules=asyncmodules:main
