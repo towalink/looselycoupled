@@ -8,7 +8,7 @@ import logging
 import os
 import time
 
-from asyncmodules import module_threaded
+from looselycoupled import module_threaded
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class WebApp():
         logger.info(f'Index page requested, action [{action}], id [{id}]')
         
         if action == 'trigger':
-            # Examples for calling asyncmodules methods outside the event loop thread
+            # Examples for calling modules' methods outside the event loop thread
             pos = self.exec_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was synchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
             self.enqueue_task_threadsafe('cherrypy_example.add_log_entry', metadata=None, text='This line was asynchronously added by the module "cherrypy_example" from a non-coroutine in another thread')
             self.trigger_event_threadsafe('webpage_trigger')

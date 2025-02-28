@@ -16,6 +16,12 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
+## [0.3.0] - 2025-02-28
+
+### Changed
+
+- Rename project from "asyncmodules" to "looselycoupled" to be able to upload to PyPi
+
 ## [0.2.0] - 2025-02-28
 
 ### Added

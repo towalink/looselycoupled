@@ -5,16 +5,16 @@
 
 __author__ = "Dirk Henrici"
 __license__ = "AGPL3"
-__email__ = "towalink.asyncmodules@henrici.name"
+__email__ = "towalink.looselycoupled@henrici.name"
 
 
 import getopt
 import logging
 import sys
 
-from asyncmodules import configuration
-from asyncmodules import modulemanager
-from asyncmodules import module_prometheus
+from looselycoupled import configuration
+from looselycoupled import modulemanager
+from looselycoupled import module_prometheus
 from examples import cherrypy_example
 from examples import controller_example
 from examples import gpiod_example

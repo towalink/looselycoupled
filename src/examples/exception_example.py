@@ -2,7 +2,7 @@
 
 import logging
 
-from asyncmodules import module
+from looselycoupled import module
 
 
 logger = logging.getLogger(__name__)

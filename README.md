@@ -1,4 +1,4 @@
-# AsyncModules
+# LooselyCoupled
 
 Simplistic asyncio-based framework for loosely coupling application modules that can interact synchronously and asynchronously (via event queue) 
 
@@ -21,7 +21,6 @@ For instance in smarthome applications, there are different components that need
 - Example code for often used modules provided, e.g. controller, CherryPy webserver, GPIO management via gpiod with generic support of input and output (incl. blinking).
 - Very lightweight due to small and manageable code base.
 
-<!--
 ---
 
 ## Installation
@@ -29,23 +28,24 @@ For instance in smarthome applications, there are different components that need
 Install using PyPi:
 
 ```shell
-pip3 install asyncmodules
+pip3 install looselycoupled
 ```
 
+<!--
 ### Package for Debian Linux
 
 Download the provided Debian package (in the desired version) and install it:
 
 ```shell
-dpkg -i python3-asyncmodules_0.1.0-1_all.deb
+dpkg -i python3-looselycoupled_0.1.0-1_all.deb
 ```
 
 ### Package for Alpine Linux
 
-You may install the Alpine package (https://pkgs.alpinelinux.org/packages?name=py3-asyncmodules) from Alpine's testing repository:
+You may install the Alpine package (https://pkgs.alpinelinux.org/packages?name=py3-looselycoupled) from Alpine's testing repository:
 
 ```shell
-apk add asyncmodules@testing
+apk add looselycoupled@testing
 ```
 
 Note that a line like `@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing` needs to be present in `/etc/apk/repositories` to make the testing repository available.
@@ -97,7 +97,7 @@ In case you encounter any bugs, please report the expected behavior and the actu
 
 ### Clone repository
 
-Clone this repo to your local machine using `https://github.com/towalink/asyncmodules.git`
+Clone this repo to your local machine using `https://github.com/towalink/looselycoupled.git`
 
 Install the module temporarily to make it available in your Python installation:
 ```shell
@@ -111,4 +111,4 @@ pip3 install -e <path to root of "src" directory>
 [![License](http://img.shields.io/:license-agpl3-blue.svg?style=flat-square)](https://opensource.org/licenses/AGPL-3.0)
 
 - **[AGPL3 license](https://opensource.org/licenses/AGPL-3.0)**
-- Copyright 2025 © <a href="https://github.com/towalink/asyncmodules" target="_blank">Dirk Henrici</a>.
+- Copyright 2025 © <a href="https://github.com/towalink/looselycoupled" target="_blank">Dirk Henrici</a>.

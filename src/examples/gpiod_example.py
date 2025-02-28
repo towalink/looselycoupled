@@ -6,9 +6,9 @@ import logging
 try:
     import gpiod
 except ModuleNotFoundError:
-    from asyncmodules import mock_gpiod as gpiod
+    from looselycoupled import mock_gpiod as gpiod
 
-from asyncmodules import module_gpiod
+from looselycoupled import module_gpiod
 
 
 logger = logging.getLogger(__name__)

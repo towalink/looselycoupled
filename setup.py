@@ -6,14 +6,14 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup_kwargs = {
-    'name': 'asyncmodules',
-    'version': '0.2.0',
+    'name': 'looselycoupled',
+    'version': '0.3.0',
     'author': 'Dirk Henrici',
-    'author_email': 'towalink.asyncmodules@henrici.name',
+    'author_email': 'towalink.looselycoupled@henrici.name',
     'description': 'simplistic asyncio-based framework for loosely coupling application modules that can interact synchronously and asynchronously (event queue)',
     'long_description': long_description,
     'long_description_content_type': 'text/markdown',
-    'url': 'https://www.github.com/towalink/asyncmodules',
+    'url': 'https://www.github.com/towalink/looselycoupled',
     'packages': setuptools.find_namespace_packages('src'),
     'package_dir': {'': 'src'},
     'include_package_data': True,
@@ -31,7 +31,7 @@ setup_kwargs = {
     },
     'entry_points': '''
         [console_scripts]
-        asyncmodules=asyncmodules:main
+        looselycoupled=looselycoupled:main
     ''',
     'classifiers': [
         'Programming Language :: Python',
@@ -45,9 +45,9 @@ setup_kwargs = {
     'python_requires': '>=3.8',
     'keywords': 'event-driven asynchronous asyncio messaging',
     'project_urls': {
-        'Project homepage': 'https://www.github.com/towalink/asyncmodules',
-        'Repository': 'https://www.github.com/towalink/asyncmodules',
-        'PyPi': 'https://pypi.org/project/asyncmodules/'
+        'Project homepage': 'https://www.github.com/towalink/looselycoupled',
+        'Repository': 'https://www.github.com/towalink/looselycoupled',
+        'PyPi': 'https://pypi.org/project/looselycoupled/'
     },
 }
 
