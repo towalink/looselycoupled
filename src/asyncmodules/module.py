@@ -43,13 +43,13 @@ class Module():
             method = None
         return method
 
-    async def call_method(self, methodname, log_unknown=True, **kwargs):
+    async def call_method(self, methodname, metadata, log_unknown=True, **kwargs):
         """Calles the method of this object instance with the given name and arguments; optionally logs if method unknown"""
         if (method := self.get_method(methodname)) is not None:
             if inspect.iscoroutinefunction(method):
-                return await method(**kwargs)
+                return await method(metadata, **kwargs)
             else:
-                return method(**kwargs)
+                return method(metadata, **kwargs)
         else:
             if log_unknown:
                 logger.error(f'Called method [{methodname}] unknown in module [{self.name}]')
@@ -118,7 +118,7 @@ class Module():
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them)"""
         pass
 
-    async def _run_passively(self):
+    async def _run_passively(self, metadata):
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them); internal method"""
         self.state = States.passive
         logger.debug('Run module (passively)')
@@ -129,7 +129,7 @@ class Module():
         """Runs the module, may actively initiate new tasks/events"""
         pass
 
-    async def _run(self):
+    async def _run(self, metadata):
         """Runs the module, may actively initiate new tasks/events; internal method"""
         if self.state == States.passive:
             self.state = States.active
@@ -143,26 +143,26 @@ class Module():
         """Called at module startup for initialization purposes"""
         pass
 
-    async def startup(self):
+    async def startup(self, metadata):
         """Initialization of the module (get config)"""
         await self.initialize()
         self.event_no_longer_passive.clear()        
         # asyncio.create_task(self._run_passively()) with exception handling:        
         self._task_passive = await self._function_references.schedule_method(self, '_run_passively')
 
-    async def activate(self):
+    async def activate(self, metadata):
         """Go into active state"""
         self.event_no_longer_active.clear()        
         # asyncio.create_task(self._run()) with exception handling:
         self._task_active = await self._function_references.schedule_method(self, '_run')
 
-    async def deactivate(self):
+    async def deactivate(self, metadata):
         """Go back into passive state (trigger stopping of "active" coroutine)"""
         if self.state == States.active:
             self.state = States.passive
             self.event_no_longer_active.set()
 
-    async def initiate_shutdown(self):
+    async def initiate_shutdown(self, metadata):
         """Shutdown the module (prepare/initiate shutdown; trigger stopping of "passive" coroutine)"""
         # Latest now, the "active" coroutine must have finished
         if self._task_active is not None:
@@ -172,7 +172,7 @@ class Module():
         self.state = States.inactive
         self.event_no_longer_passive.set()
 
-    async def finalize_shutdown(self):
+    async def finalize_shutdown(self, metadata):
         """Shutdown the module (cleanup activities)"""
         assert self._task_active is None
         # Latest now, the "passive" coroutine must have finished

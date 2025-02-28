@@ -14,6 +14,7 @@ import sys
 
 from asyncmodules import configuration
 from asyncmodules import modulemanager
+from asyncmodules import module_prometheus
 from examples import cherrypy_example
 from examples import controller_example
 from examples import gpiod_example
@@ -104,4 +105,5 @@ if __name__ == "__main__":
     appmodules.update({'controller_example' : controller_example})
     appmodules.update({'gpiod_example' : gpiod_example})
     appmodules.update({'cherrypy_example' : cherrypy_example})
+    appmodules.update({'prometheus' : module_prometheus})
     app.run(appmodules=appmodules)

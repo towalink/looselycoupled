@@ -120,10 +120,10 @@ class ModuleManager(object):
             logger.error(f'Unknown module [{modulename}] for task [{target}]')
         else:
             if asynchronous:
-                await self.schedule_method(module, methodname, **kwargs)
+                await self.schedule_method(module, methodname, metadata, **kwargs)
                 return False            
             else:
-                return await module.call_method(methodname, **kwargs)
+                return await module.call_method(methodname, metadata, **kwargs)
 
     def exec_task_threadsafe(self, target, metadata, asynchronous=False, **kwargs):
         """Execute a task while ensuring that no other task is running in parallel"""
@@ -182,7 +182,7 @@ class ModuleManager(object):
                 if asynchronous:
                     await self.schedule_method(module_obj, event, log_unknown=False, **kwargs)
                 else:
-                    await module_obj.call_method(event, log_unknown=False, **kwargs)
+                    await module_obj.call_method(event, metadata, log_unknown=False, **kwargs)
         if event == 'on_exit':
             logger.info('Shutting down after on_exit event notification...')
             self._exit = True

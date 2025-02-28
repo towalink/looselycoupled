@@ -132,13 +132,13 @@ class CherryPyExample(module_threaded.ModuleThreaded):
         """Module initialization"""
         self.app = prepare_webapp(self.exec_task_threadsafe, self.enqueue_task_threadsafe, self.trigger_event_threadsafe)
 
-    async def add_log_entry(self, text):
+    async def add_log_entry(self, metadata, text):
         """Adds a log entry to the log dictionary"""
         return self.app.add_line(text)
 
-    async def on_my_simple_example_event(self, param):
+    async def on_my_simple_example_event(self, metadata, param):
         """React on event notification"""
-        await self.add_log_entry(param)
+        await self.add_log_entry(metadata, param)
 
     def thread_run(self):
         logger.info('Starting CherryPy webserver...')
