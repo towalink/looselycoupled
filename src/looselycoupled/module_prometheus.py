@@ -104,7 +104,6 @@ class ModulePrometheus(module_threaded.ModuleThreaded):
                 self.metrics[metric] = prometheus_client.Gauge(metric, documentation, labels.keys())
             if value:
                 if len(labels):
-                    logger.info(str(value)) # ***
                     self.metrics[metric].labels(**labels).set(value)
                 else:
                     self.metrics[metric].set(value)

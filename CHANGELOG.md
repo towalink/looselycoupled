@@ -16,6 +16,12 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
+## [0.3.1] - 2025-03-06
+
+### Fixed
+
+- Add missing parts of mock_prometheus
+
 ## [0.3.0] - 2025-02-28
 
 ### Changed

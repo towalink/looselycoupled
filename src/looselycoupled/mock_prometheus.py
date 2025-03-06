@@ -15,3 +15,9 @@ def generate_latest():
 class Gauge():
     def __init__(self, *args, **kwargs):
         pass
+
+    def set(self, *args, **kwargs):
+        pass
+
+    def labels(self, *args, **kwargs):
+        return self
