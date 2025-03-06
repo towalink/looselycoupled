@@ -14,6 +14,7 @@ import sys
 
 from looselycoupled import configuration
 from looselycoupled import modulemanager
+from looselycoupled import module_clickhandler
 from looselycoupled import module_prometheus
 from examples import cherrypy_example
 from examples import controller_example
@@ -105,5 +106,6 @@ if __name__ == "__main__":
     appmodules.update({'controller_example' : controller_example})
     appmodules.update({'gpiod_example' : gpiod_example})
     appmodules.update({'cherrypy_example' : cherrypy_example})
+    appmodules.update({'clickhandler' : module_clickhandler})
     appmodules.update({'prometheus' : module_prometheus})
     app.run(appmodules=appmodules)

@@ -1,0 +1,110 @@
+# -*- coding: utf-8 -*-
+
+import asyncio
+from collections import defaultdict
+import enum
+import logging
+import time
+
+from looselycoupled import module
+
+
+logger = logging.getLogger(__name__)
+
+
+class State(enum.Enum):
+    """Enum class for keeping state info"""
+    NEUTRAL = 0  # not pushed, neutral state
+    PUSHED = 1  # pushed
+    RELEASED = 2  # released, doubleclick might follow
+    PUSHEDAGAIN = 3  # pushed as second push of a doubleclick
+    HOLD = 4  # still pushed
+
+
+class ItemState():
+    """Class for keeping state of a tracked item"""
+    _state = None  # state info
+    ts_pushed = None  # timestamp when item got pushed
+    ts_released = None  # timestamp when item got released
+
+    def __init__(self):
+        """Object initialization"""
+        self._state = State.NEUTRAL
+        self.ts_pushed = None
+        self.ts_released = None
+
+    def update_state(self, metadata, line, rising_edge):
+        self.line = line
+        if rising_edge:
+            # If new button push is long after last release, we start independently anew
+            if self.state == State.RELEASED:
+                if self.ts_pushed - self.ts_released > 0.5:
+                    self.state = State.NEUTRAL
+            # State transitions
+            if self.state == State.NEUTRAL:
+                self.state = State.PUSHED
+                logger.info(f'Line [{line}] push started')
+            elif self.state == State.RELEASED:
+                self.state = State.PUSHEDAGAIN
+            else:
+                logger.warn(f'Unexpected state [{self.state}] for rising edge')
+        else:
+            # No doubleclick if second push is too long
+            if self.state == State.PUSHEDAGAIN:
+                if self.ts_released - self.ts_pushed > 1:
+                    self.state = State.PUSHED
+            # State transitions
+            if self.state == State.PUSHED:
+                if self.ts_released - self.ts_pushed <= 1:
+                    self.state = State.RELEASED
+                    logger.info(f'Line [{line}] pushed short')
+                    pass # *** click / push short event
+                else:
+                    self.state = State.NEUTRAL
+                    logger.info(f'Line [{line}] pushed long')
+                    pass # *** push long event
+            elif self.state == State.PUSHEDAGAIN:
+                self.state = State.NEUTRAL
+                logger.info(f'Line [{line}] doubleclick')
+                pass # *** doubleclick event
+            else:
+                logger.warn(f'Unexpected state [{self.state}] for rising edge')
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        logger.debug(f'State change for line [{self.line}] from [{self._state}] to [{value}]')
+        self._state = value
+
+
+class ModuleClickHandler(module.Module):
+    """Application module for generating click events based on rising and falling edges"""
+    items = None  # items to be tracked
+    inversed_logic = None  # list of items with inversed logic
+
+    async def initialize(self):
+        """Module initialization"""
+        # Initialize data structures
+        self.items = defaultdict(ItemState)
+        self.inversed_logic = []
+
+    async def set_inversed_logic(self, inversed_logic):
+        """Set the list of items with inversed logic"""
+        self.inversed_logic = inversed_logic
+
+    async def on_changed_gpio_input(self, metadata, line, line_seq, rising_edge):
+        """React on received input event"""
+        if line in self.inversed_logic:
+            rising_edge = not rising_edge
+        item = self.items[line]
+        if rising_edge:
+            item.ts_pushed = time.time()
+        else:
+            item.ts_released = time.time()
+        item.update_state(metadata, line, rising_edge)
+            
+
+module_class = ModuleClickHandler
