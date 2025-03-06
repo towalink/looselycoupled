@@ -55,8 +55,8 @@ class LineRequest:
     def wait_edge_events(self, *args, **kwargs):
         if (timeout := kwargs.get('timeout')) is not None:
             if 'keyboard' in sys.modules:
-                if self.key_pressed != keyboard.is_pressed('space'):
-                    self.key_pressed = keyboard.is_pressed('space')
+                if self.key_pressed != keyboard.is_pressed('escape'):
+                    self.key_pressed = keyboard.is_pressed('escape')
                     self.key_event = True
                     return True
             else:
