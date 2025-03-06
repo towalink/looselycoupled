@@ -89,7 +89,7 @@ def prepare_webapp(exec_task_threadsafe, enqueue_task_threadsafe, trigger_event_
     #                        'server.socket_port': cfg.socket_port,
     #                       })
     cherrypy.config.update({'server.socket_host': '0.0.0.0',
-                            'server.socket_port': 80,
+                            'server.socket_port': 8080,
                            })
     # Disable autoreload (cannot listen at a port <1024 after dropping root privileges)
     cherrypy.config.update({'engine.autoreload.on': False})
