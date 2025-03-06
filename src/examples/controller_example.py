@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 class ControllerExampleModule(module.Module):
     """Example Controller module"""
 
-    async def on_changed_gpio_input(self, metadata, line, rising_edge):
-        logger.info('on_changed_gpio_input called for line [{line}], rising edge [{rising_edge}]')
+    async def on_changed_gpio_input(self, metadata, line, line_seq, rising_edge):
+        logger.info(f'on_changed_gpio_input called for line [{line}], rising edge [{rising_edge}]')
 
     async def on_webpage_trigger(self):
         """Receives broadcast that gets sent when button 'Trigger Action' is pushed on webpage"""
