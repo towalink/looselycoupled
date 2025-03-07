@@ -16,17 +16,32 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
+## [0.4.0] - 2025-03-07
+
+### Added
+
+- Add module for generating click events based on rising and falling edges.
+- Add mock for GPIO input based on keyboard.
+
+### Changed
+
+- Run example web server on unprivileged port 8080.
+
+### Fixed
+
+- Harmonize and fix metadata handling.
+
 ## [0.3.1] - 2025-03-06
 
 ### Fixed
 
-- Add missing parts of mock_prometheus
+- Add missing parts of mock_prometheus.
 
 ## [0.3.0] - 2025-02-28
 
 ### Changed
 
-- Rename project from "asyncmodules" to "looselycoupled" to be able to upload to PyPi
+- Rename project from "asyncmodules" to "looselycoupled" to be able to upload to PyPi.
 
 ## [0.2.0] - 2025-02-28
 
