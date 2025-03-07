@@ -43,13 +43,13 @@ class Module():
             method = None
         return method
 
-    async def call_method(self, methodname, metadata, log_unknown=True, **kwargs):
+    async def call_method(self, methodname, log_unknown=True, **kwargs):
         """Calles the method of this object instance with the given name and arguments; optionally logs if method unknown"""
         if (method := self.get_method(methodname)) is not None:
             if inspect.iscoroutinefunction(method):
-                return await method(metadata, **kwargs)
+                return await method(**kwargs)
             else:
-                return method(metadata, **kwargs)
+                return method(**kwargs)
         else:
             if log_unknown:
                 logger.error(f'Called method [{methodname}] unknown in module [{self.name}]')
@@ -118,7 +118,7 @@ class Module():
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them)"""
         pass
 
-    async def _run_passively(self, metadata):
+    async def _run_passively(self):
         """Runs the module, process tasks/events (initiate new tasks/events only for handling them); internal method"""
         self.state = States.passive
         logger.debug('Run module (passively)')
@@ -129,7 +129,7 @@ class Module():
         """Runs the module, may actively initiate new tasks/events"""
         pass
 
-    async def _run(self, metadata):
+    async def _run(self):
         """Runs the module, may actively initiate new tasks/events; internal method"""
         if self.state == States.passive:
             self.state = States.active
