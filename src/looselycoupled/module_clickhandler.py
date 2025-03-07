@@ -33,7 +33,7 @@ class ItemState():
         self.ts_pushed = None
         self.ts_released = None
 
-    def update_state(self, metadata, line, rising_edge):
+    def update_state(self, line, rising_edge):
         self.line = line
         if rising_edge:
             # If new button push is long after last release, we start independently anew
@@ -58,17 +58,18 @@ class ItemState():
                 if self.ts_released - self.ts_pushed <= 1:
                     self.state = State.RELEASED
                     logger.info(f'Line [{line}] pushed short')
-                    pass # *** click / push short event
+                    return 'pushed_short'
                 else:
                     self.state = State.NEUTRAL
                     logger.info(f'Line [{line}] pushed long')
-                    pass # *** push long event
+                    return 'pushed_long'
             elif self.state == State.PUSHEDAGAIN:
                 self.state = State.NEUTRAL
                 logger.info(f'Line [{line}] doubleclick')
-                pass # *** doubleclick event
+                return 'doubleclick'
             else:
                 logger.warn(f'Unexpected state [{self.state}] for rising edge')
+        return None
 
     @property
     def state(self):
@@ -104,7 +105,8 @@ class ModuleClickHandler(module.Module):
             item.ts_pushed = time.time()
         else:
             item.ts_released = time.time()
-        item.update_state(metadata, line, rising_edge)
+        if event_name := item.update_state(line, rising_edge):
+            await self.trigger_event(event_name, metadata=metadata, line=line)
             
 
 module_class = ModuleClickHandler
