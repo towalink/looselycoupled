@@ -33,7 +33,7 @@ class GpiodExample(module_gpiod.ModuleGpiod):
                        }
         await super().initialize('/dev/gpiochip0', input_lines=input_lines, output_lines=output_lines)
 
-    async def modify_output_states(self):
+    async def modify_output_states(self, metadata):
         """Changes outputs for demonstration purposes"""
         # Line 4
         await self.set_output_state(4, module_gpiod.OutputState.ON)
