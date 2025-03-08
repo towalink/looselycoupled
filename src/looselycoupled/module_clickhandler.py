@@ -96,7 +96,7 @@ class ModuleClickHandler(module.Module):
         """Set the list of items with inversed logic"""
         self.inversed_logic = inversed_logic
 
-    async def on_changed_gpio_input(self, metadata, line, line_seq, rising_edge):
+    async def on_changed_gpio_input(self, metadata, line, line_name, line_seq, rising_edge):
         """React on received input event"""
         if line in self.inversed_logic:
             rising_edge = not rising_edge

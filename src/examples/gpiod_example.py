@@ -19,6 +19,7 @@ class GpiodExample(module_gpiod.ModuleGpiod):
 
     async def initialize(self):
         """Module initialization"""
+        # Provide GPIOD Line Settings
         input_lines = { 22: gpiod.LineSettings(
                                 direction=gpiod.line.Direction.INPUT,
                                 edge_detection=gpiod.line.Edge.BOTH,
@@ -31,7 +32,15 @@ class GpiodExample(module_gpiod.ModuleGpiod):
                                           output_value=gpiod.line.Value.INACTIVE
                                       )
                        }
-        await super().initialize('/dev/gpiochip0', input_lines=input_lines, output_lines=output_lines)
+        # Assign human readable alias names for the lines
+        line_names = {
+                    4 : 'Output4_NothingSpecial',
+                    17 : 'Output17_ForBlinking',
+                    22 : 'Input22_ForTestingPurposes',
+                    27 : 'Output27_NothingSpecial'
+                }
+        # Let the parent method do the work
+        await super().initialize('/dev/gpiochip0', input_lines=input_lines, output_lines=output_lines, line_names=line_names)
 
     async def modify_output_states(self, metadata):
         """Changes outputs for demonstration purposes"""
@@ -53,7 +62,7 @@ class GpiodExample(module_gpiod.ModuleGpiod):
             state_new = module_gpiod.OutputState.OFF
         else:
             logger.error('Unknown output state')
-        await self.set_output_state(17, state_new)
+        await self.set_output_state('Output17_ForBlinking', state_new)
         logger.info(f'Setting output 17 to state [{state_new}]')
         # Line 27
         await self.toggle_output_state(27)

@@ -16,6 +16,16 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
+## [0.5.0] - 2025-03-08
+
+### Added
+
+- Support speaking line names for GPIO inputs and GPIO outputs.
+
+### Fixed
+
+- Add missing metadata argument in example modules.
+
 ## [0.4.0] - 2025-03-07
 
 ### Added

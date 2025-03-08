@@ -140,7 +140,7 @@ class BlinkRhythms(dict):
 class ModuleGpiod(module_threaded.ModuleThreaded):
     """Application module for accessing GPIOs using the gpiod library"""
 
-    async def initialize(self, chip_name='/dev/gpiochip0', input_lines=[], output_lines=[]):
+    async def initialize(self, chip_name='/dev/gpiochip0', input_lines=[], output_lines=[], line_names=[]):
         """Module initialization"""
         # Get object for accessing the GPIO chip
         logger.info(f'Accessing GPIO chip [{chip_name}]')
@@ -164,6 +164,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
         self.blinkrhythms = BlinkRhythms()
         self.input_lines = input_lines
         self.output_lines = output_lines
+        self.line_names = line_names
         self.outputs = Outputs(self.get_key_list(output_lines)) 
         self.event_wakeup_output = threading.Event()
 
@@ -176,9 +177,20 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
             else:
                 l.append(item)
         return l
-        
+
+    def get_line_byname(self, line):
+        """Gets line number by line number or line name"""
+        if isinstance(line, str):
+            try:
+                # Get key of "line_names" dictionary by value
+                line = list(self.line_names.keys())[list(self.line_names.values()).index(line)]
+            except ValueError:
+                raise ValueError(f'Line name [{line}] unknown')    
+        return line
+
     async def get_output_state(self, line):
         """Get the state of the output with the specified line offset"""
+        line = self.get_line_byname(line)
         try:
             return self.outputs[line].state
         except KeyError:
@@ -186,6 +198,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
 
     async def set_output_state(self, line, state_new):
         """Set output state"""
+        line = self.get_line_byname(line)
         if line not in self.outputs.keys():
             raise ValueError(f'Output line [{line}] not handled')
         self.outputs[line].set_state(state_new)
@@ -193,6 +206,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
 
     async def toggle_output_state(self, line):
         """Toggles the state of the output with the specified line offset"""
+        line = self.get_line_byname(line)
         state = await self.get_output_state(line)
         state_new = OutputState.ON if (state == OutputState.OFF) else OutputState.OFF
         await self.set_output_state(line, state_new)
@@ -229,5 +243,6 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
                     events = request.read_edge_events()
                     for event in events:
                         rising_edge = (event.event_type == event.Type.RISING_EDGE)
-                        logger.info(f"Input event on line [{event.line_offset}:{event.line_seqno}]: {'rising edge' if rising_edge else 'falling edge'}")
-                        self.trigger_event_threadsafe('changed_gpio_input', line=event.line_offset, line_seq={event.line_seqno}, rising_edge=rising_edge)
+                        line_name = self.line_names.get(event.line_offset)
+                        logger.info(f"Input event on line [{line_name}:{event.line_offset}:{event.line_seqno}]: {'rising edge' if rising_edge else 'falling edge'}")
+                        self.trigger_event_threadsafe('changed_gpio_input', line=event.line_offset, line_name=line_name, line_seq={event.line_seqno}, rising_edge=rising_edge)
