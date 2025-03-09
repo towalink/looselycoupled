@@ -33,8 +33,9 @@ class ItemState():
         self.ts_pushed = None
         self.ts_released = None
 
-    def update_state(self, line, rising_edge):
+    def update_state(self, line, line_name, rising_edge):
         self.line = line
+        self.line_name = line_name
         if rising_edge:
             # If new button push is long after last release, we start independently anew
             if self.state == State.RELEASED:
@@ -43,7 +44,6 @@ class ItemState():
             # State transitions
             if self.state == State.NEUTRAL:
                 self.state = State.PUSHED
-                logger.info(f'Line [{line}] push started')
             elif self.state == State.RELEASED:
                 self.state = State.PUSHEDAGAIN
             else:
@@ -57,15 +57,15 @@ class ItemState():
             if self.state == State.PUSHED:
                 if self.ts_released - self.ts_pushed <= 1:
                     self.state = State.RELEASED
-                    logger.info(f'Line [{line}] pushed short')
+                    logger.info(f'Line [{line_name}:{line}] pushed short')
                     return 'pushed_short'
                 else:
                     self.state = State.NEUTRAL
-                    logger.info(f'Line [{line}] pushed long')
+                    logger.info(f'Line [{line_name}:{line}] pushed long')
                     return 'pushed_long'
             elif self.state == State.PUSHEDAGAIN:
                 self.state = State.NEUTRAL
-                logger.info(f'Line [{line}] doubleclick')
+                logger.info(f'Line [{line_name}:{line}] doubleclick')
                 return 'doubleclick'
             else:
                 logger.warn(f'Unexpected state [{self.state}] for rising edge')
@@ -105,7 +105,7 @@ class ModuleClickHandler(module.Module):
             item.ts_pushed = time.time()
         else:
             item.ts_released = time.time()
-        if event_name := item.update_state(line, rising_edge):
+        if event_name := item.update_state(line, line_name, rising_edge):
             await self.trigger_event(event_name, metadata=metadata, line=line)
             
 
