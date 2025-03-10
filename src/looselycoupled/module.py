@@ -106,6 +106,10 @@ class Module():
             kwargs['metadata'] = Metadata(source_obj=self, source_name=self._name)
         self._function_references.trigger_event_threadsafe(event, **kwargs)
 
+    def is_ready_module(self, modulename):
+        """Checks whether a module is available and ready"""
+        return self._function_references.is_ready_module(modulename)
+
     def register_task(self, task, name):
         """Register a task for exception handling and management"""
         return self._function_references.register_task(task, name)

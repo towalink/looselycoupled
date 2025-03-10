@@ -287,7 +287,8 @@ class ModuleManager(object):
             'exec_task', 'exec_task_threadsafe',
             'broadcast_event', 
             'schedule_method', 
-            'register_task'
+            'register_task',
+            'is_ready_module'
         ])
         return FunctionReferences(
             self.trigger_event, self.trigger_event_threadsafe, 
@@ -295,5 +296,6 @@ class ModuleManager(object):
             self.exec_task, self.exec_task_threadsafe,
             self.broadcast_event, 
             self.schedule_method, 
-            self.register_task
+            self.register_task,
+            self.is_ready_module
         )
