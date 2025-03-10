@@ -106,7 +106,7 @@ class ModuleClickHandler(module.Module):
         else:
             item.ts_released = time.time()
         if event_name := item.update_state(line, line_name, rising_edge):
-            await self.trigger_event(event_name, metadata=metadata, line=line)
+            await self.trigger_event(event_name, metadata=metadata, line=line, line_name=line_name, line_seq=line_seq)
             
 
 module_class = ModuleClickHandler
