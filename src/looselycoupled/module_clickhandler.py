@@ -92,7 +92,7 @@ class ModuleClickHandler(module.Module):
         self.items = defaultdict(ItemState)
         self.inversed_logic = []
 
-    async def set_inversed_logic(self, inversed_logic):
+    async def set_inversed_logic(self, metadata=None, inversed_logic=[]):
         """Set the list of items with inversed logic"""
         self.inversed_logic = inversed_logic
 

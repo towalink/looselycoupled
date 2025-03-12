@@ -16,6 +16,23 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
+## [0.5.2] - 2025-03-12
+
+### Fixed
+
+- Corrections done after practical use
+
+## [0.5.1] - 2025-03-10
+
+### Added
+
+- Provide function is_ready_module() to modules.
+
+### Changed
+
+- Rename title in CherryPy example pages.
+- Provide more information in clickhandler events.
+
 ## [0.5.0] - 2025-03-08
 
 ### Added

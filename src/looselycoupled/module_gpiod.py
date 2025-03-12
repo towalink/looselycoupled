@@ -196,7 +196,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
         except KeyError:
             raise ValueError(f'Output line [{line}] not handled')
 
-    async def set_output_state(self, line, state_new):
+    async def set_output_state(self, metadata, line, state_new):
         """Set output state"""
         line = self.get_line_byname(line)
         if line not in self.outputs.keys():
@@ -204,7 +204,7 @@ class ModuleGpiod(module_threaded.ModuleThreaded):
         self.outputs[line].set_state(state_new)
         self.event_wakeup_output.set()  # notify the output change
 
-    async def toggle_output_state(self, line):
+    async def toggle_output_state(self, metadata, line):
         """Toggles the state of the output with the specified line offset"""
         line = self.get_line_byname(line)
         state = await self.get_output_state(line)
