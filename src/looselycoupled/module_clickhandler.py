@@ -100,7 +100,7 @@ class ModuleClickHandler(module.Module):
         """React on received input event"""
         if line in self.inversed_logic:
             rising_edge = not rising_edge
-        item = self.items[line]
+        item = self.items[(line, line_name)]
         if rising_edge:
             item.ts_pushed = time.time()
         else:
