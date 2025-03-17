@@ -27,6 +27,8 @@ class EventLoop():
         # Process a single item
         await self._process_item_func(item)
         self._queue.task_done()
+        # Let other waiting tasks fill the queue again
+        await asyncio.sleep(0)
         # Trigger event if nothing more is to be done
         if self._queue.empty() :
             if self._queue_empty_func is not None:

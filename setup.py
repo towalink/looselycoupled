@@ -7,7 +7,7 @@ with open('README.md', 'r') as f:
 
 setup_kwargs = {
     'name': 'looselycoupled',
-    'version': '0.5.2',
+    'version': '0.5.3',
     'author': 'Dirk Henrici',
     'author_email': 'towalink.looselycoupled@henrici.name',
     'description': 'simplistic asyncio-based framework for loosely coupling application modules that can interact synchronously and asynchronously (event queue)',

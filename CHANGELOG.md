@@ -16,6 +16,16 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
+## [0.5.3] - 2025-03-17
+
+### Changed
+
+- Reduce number of calls to on_becoming_idle
+
+### Fixed
+
+- Per-input clickhandler behavior also for mocked inputs
+
 ## [0.5.2] - 2025-03-12
 
 ### Fixed
