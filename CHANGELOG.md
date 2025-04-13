@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- n/a
+- Allow username given in query string of index page of example webserver
 
 ### Changed
 

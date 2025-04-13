@@ -31,7 +31,7 @@ class WebApp():
         return pos
 
     @cherrypy.expose
-    def index(self, action=None, id=None):
+    def index(self, action=None, id=None, username=None):
         """Show a list of existing machines"""
         #cherrypy.log('Index page requested', context='WEBAPP', severity=logging.INFO, traceback=False)
         logger.info(f'Index page requested, action [{action}], id [{id}]')
@@ -56,6 +56,8 @@ class WebApp():
 
     def login_screen(self, from_page='..', username='', error_msg='', **kwargs):
         """Shows a login form"""
+        if not username:
+            username = cherrypy.request.params.get('username', '')
         tmpl = self.jinja_env.get_template('login.html')
         return tmpl.render(from_page=from_page, username=username, error_msg=error_msg).encode('utf-8')
 
