@@ -16,11 +16,12 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
-## [0.5.4] - 2025-07-05
+## [0.6.0] - 2025-07-05
 
 ### Changed
 
 - Support setting the maximum number of threads and warn if limit is reached
+- Replace license classifier by SPDX identifier
 
 ## [0.5.3] - 2025-03-17
 
