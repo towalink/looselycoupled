@@ -12,6 +12,7 @@ import traceback
 
 from . import eventloop
 from .metadata import Metadata
+from .monitoredthreadpoolexecutor import MonitoredThreadPoolExecutor
 
 
 logger = logging.getLogger(__name__)
@@ -21,9 +22,11 @@ class ModuleManager(object):
     """Class to handle modules"""
     _modules = OrderedDict()  # Dictionary of module data
 
-    def __init__(self, appmodules, exception_path=None):
+    def __init__(self, appmodules, exception_path=None, asyncio_debug=None, max_workers=None):
         """Initialization"""
         self._exception_path = exception_path
+        self._asyncio_debug = asyncio_debug
+        self._max_workers = max_workers
         self._modules = OrderedDict()
         self._thread_reference = threading.current_thread() 
         self._running_tasks = dict()
@@ -255,6 +258,11 @@ class ModuleManager(object):
         signal.signal(signal.SIGTERM, self.on_signal)
         # Run asyncio loop
         loop = self.loop = asyncio.new_event_loop()
+        if self._asyncio_debug is not None:
+            loop.set_debug(enabled=self._asyncio_debug)
+        #loop.slow_callback_duration = <duration>
+        if self._max_workers is not None:
+           loop.set_default_executor(MonitoredThreadPoolExecutor(max_workers=self._max_workers, thread_name_prefix='asyncio'))
         try:
             asyncio.set_event_loop(loop)
             maintask = loop.create_task(self.maintask())

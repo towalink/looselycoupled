@@ -96,7 +96,7 @@ class App():
         loglevel, verbose = self.parse_opts()
         self.configure_logging(loglevel, verbose)
         exception_path = './tmp_exceptions.log'
-        modulemanager.ModuleManager(appmodules, exception_path=exception_path).run()
+        modulemanager.ModuleManager(appmodules, exception_path=exception_path, max_workers=10).run()
 
 
 if __name__ == "__main__":
@@ -108,4 +108,5 @@ if __name__ == "__main__":
     appmodules.update({'cherrypy_example' : cherrypy_example})
     appmodules.update({'clickhandler' : module_clickhandler})
     appmodules.update({'prometheus' : module_prometheus})
+    # Note: remember to set "max_workers" above to a value high enough to support the number of threads of all modules
     app.run(appmodules=appmodules)
