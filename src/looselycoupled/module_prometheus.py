@@ -102,7 +102,7 @@ class ModulePrometheus(module_threaded.ModuleThreaded):
         with self.lock:
             if metric not in self.metrics:
                 self.metrics[metric] = prometheus_client.Gauge(metric, documentation, labels.keys())
-            if value:
+            if value is not None:
                 if len(labels):
                     self.metrics[metric].labels(**labels).set(value)
                 else:

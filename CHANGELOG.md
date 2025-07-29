@@ -16,6 +16,12 @@ All notable changes to this project are documented in this file.
 
 - n/a
 
+## [0.6.1] - 2025-07-29
+
+### Fixed
+
+- Fix zero metrics not getting set for Prometheus export
+
 ## [0.6.0] - 2025-07-05
 
 ### Changed
